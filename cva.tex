@@ -1,10 +1,17 @@
 \documentclass[12pt]{article}
 \usepackage{amsmath,amssymb}
-\usepackage[dvipdfmx]{graphicx}
-\topmargin=-45pt  \headheight=12truept \headsep=25pt
-\footskip=37pt \hoffset=0pt \voffset=12pt
-\oddsidemargin=0cm \evensidemargin=0cm
-\textheight=23.7cm \textwidth=16.0cm
+\usepackage[dvipdfm]{graphicx}
+
+\topmargin=-45pt  
+\headheight=12truept 
+\headsep=25pt
+\footskip=37pt 
+\hoffset=0pt 
+\voffset=12pt
+\oddsidemargin=0cm 
+\evensidemargin=0cm
+\textheight=23.7cm 
+\textwidth=16.0cm
 
 \def \nequiv {\equiv \hspace{-3mm} / \hspace{1mm}}
 \def \qed {\hfill \hbox {\rule [-2pt]{3pt}{6pt}}}
@@ -23,66 +30,67 @@
 \newtheorem{definition}[thm]{Definition}
 %\newtheorem{example}[thm]{Example}
 
+
+
 \begin{document}
-\title{Implicit American Monte Carlo Method for Semi Linear Financial Problem}
- 
+\title{Explicit and Implicit American Monte Carlo Methods for XVA}
+
 \author{
 Yusuke MORIMOTO
 \thanks{
-Graduate School of Mathematical Sciences, 
-The University of Tokyo, 
-Komaba 3-8-1, Meguro-ku, Tokyo 153-8914, Japan, \
 Bank of Tokyo Mitsubishi UFJ }
 }
 \date{}
 
 \maketitle
 \begin{abstract}
+We introduce two types of numerical compuation algorithms of XVA based on American Monte Carlo methods. We call each algorithm as Explicit and Implicit methods.
+In this paper, we propose the efficiency
+of Implicit method by showing theoritical convergence order and numerical simulation. 
+We use the Stochastic mesh methods as an typical example of American monte carlo methods.
 \end{abstract}
 
 JEL classification:C63, G12
-
 Mathematical Subject Classification(2010)   65C05,  60G40
-
-Keywords:  computational finance, option pricing, Malliavin calculus, 
+Keywords:  computational finance, option pricing, Malliavin calculus,
 stochastic mesh method, XVA
-
-Short (running) title stochastic mesh method
 
 \section{Introduction}
 
-In various situation in financial practice, calculation of following type of semi-linear expectation for a portfolio is necessary.
+In various situation in financial practice, calculation of following type of non-linear expectation for a portfolio is often needed.
 \begin{align}\label{eq:C0}
-  C_0 = E^{\mu}\left[\int_{0}^T \left\{V(t) \vee0 \right \} \ dt \right],
+    C_0 = E^{\mu}\left[\int_{0}^T g(t, X(t))\left\{V(t) \vee0 \right \} \ dt \right],
 \end{align}
-where $(\Omega, \mathcal{F}, \{\mathcal{F}_t\}_{t\in [0,T]}, \mu)$ is filtered probability space, $V(t)$ is the portfolio value of future date $t$, and $T$ is risk horizon date.\\
+where $(\Omega, \mathcal{F}, \{\mathcal{F}_t\}_{t\in [0,T]}, \mu)$ is a filtered probability space, $X$ is a underlying state process, $V(t)$ is the portfolio value of future date $t$, $T$ is the final maturity
+of all trades in the portfolio, and $g(t, x)$ is a deterministic function with respect to time and state space.\\
 In case that portfolio is composed of Eurean derivatives, $V(t)$ is expressed as
 \begin{align}\label{eq:V}
   V(t) =  E^{\mu} \left[ \sum_{k:T_k\geqq t}F_k\left({X}(T_k)\right) |\mathcal{F}_t \right],
 \end{align}
-where $X$ is underlying stochastic process and $\{F_k\}$ are deterministic functions corresponding to the pay offs of European derivatives in the portfolio.
-
-To calculate $C_0$, we needs a lot of computational resources for the following reasons.
+where $X$ is underlying stochastic process and $\{F_k\}$ are deterministic functions corresponding to the payoffs of European derivatives in the portfolio.\\
+To calculate $C_0$, we usually need a lot of computational resources for the following reasons.
 \begin{enumerate}
-  \item Monte Carlo simulation is often used for the general computation framework which can compute various type products contained in the portfolio.
-  \item Dimension of $X$ is large when there are a lot of assets in the portflio.
-  \item The path of $X$ should be generated at the same time for all products in the portfolio
-    due to the non-linearity in te equation (\ref{eq:C0}).
-  \item Conditonal expectation of equation $(\ref{eq:V})$ is needed for all $t \in [0, t]$,
-    and using naive calculation, monte of monte simulation is needed.
+    \item \label{item1} Monte Carlo simulation is often used for the general computation 
+        framework which can compute various type products contained in the portfolio. 
+        Conditonal expectation of equation $(\ref{eq:V})$ is needed for all $t \in [0, t]$.
+        If we chose naive monte carlo simulation, iteration number of monte carlo 
+        simulation is multiplied.
+    \item \label{item2} 
+        Dimension of $X$ is high when there are a lot of assets in the portflio. 
+        The path of $X$ should be generated at the same time for all products in 
+        the portfolio adue to the non-linearity in te equation (\ref{eq:C0}).
 \end{enumerate}
-
-To deal with the last problem, American Monte carlo method is often used (see \cite{G}).
+To deal with the problem \ref{item1}, American Monte carlo method is usually used (see \cite{G}).
 In the American Monte Carlo method, $V(t)$ is approximated by $\tilde{V}(t)$ which is rough but low computational cost estimation instead of naive monte carlo estimation.
 We obtaion approximation of $C_0$ by substituting $V(t)$ by $\tilde{V}(t)$.
 We call it "expicit method" which is denoted by $C_{\text{explicit}}$
 \begin{align}
-C_{\text{explicit}}=E^{\mu}\left[\int_{0}^T \left\{\tilde{V}(t) \vee0 \right \} \ dt \right].
+    C_{\text{explicit}}=E^{\mu}\left[\int_{0}^T g(t, X(t))\left\{\tilde{V}(t) \vee0 \right \} \ dt \right].
 \end{align}
 On the other hand, we have the other expression of $C_0$ as follows.
 \begin{align}\label{eq:implicit}
-  C_0 &= E^{\mu}\left[\int_{0}^T \left\{ \sum_{k:T_k\geqq t} E^{\mu} \left[ F_k({X}(T_k)) |\mathcal{F}_t \right]\right \} 1_{\{V(t) \geqq 0\}}\ dt \right]\nonumber \\
-      &=E^{\mu}\left[\int_{0}^T \left\{ \sum_{k:T_k\geqq t} F_k({X}(T_k)) 1_{\{V(t) \geqq 0\}}\right \} \ dt \right].
+  C_0 &= E^{\mu}\left[\int_{0}^T g(t, X(t)) \left\{ \sum_{k:T_k\geqq t} E^{\mu} \left[ F_k({X}(T_k)) |\mathcal{F}_t \right]\right \} 1_{\{V(t) \geqq 0\}}\ dt \right]\nonumber \\
+      &=E^{\mu}\left[\int_{0}^T  g(t, X(t)) \left\{ \sum_{k:T_k\geqq t} F_k({X}(T_k)) 1_{\{V(t) \geqq 0\}}\right \} \ dt \right].
 \end{align}
 In this expression $V(t)$ is appeared only in the indicator function. Then only the sign of
 $V(t)$ affects for the approximation accracy. In other words, how large the the difference between
@@ -94,11 +102,23 @@ We call approximation by using equation(\ref{eq:implicit}) as "Implicit method" 
 In this paper we show two algorithms of approximation of $C_0$ based on "explicit method" and 
 "implicit method" and obtain the error estimation which includes both Monte Carlo error and
 discretization error.
-There are mainly two types of method in American Monte Carlo method, Least Square Monte Carlo method and Stochastic mesh method (see \cite{G}, \cite{BG1}).
+:w
 Least square monte carlo is more popular in plactice for its general algorithm and
 less computational cost.
 On the other hand, although it is only applicable to underlying path whose transition density function is  explicitly known, stochastic mesh method has accurate estimation(see \cite{KM}).
 In this paper, we use stochastic mesh method for this reasons.
+
+where
+$$V_0(t) =E[ \sum_{k; T_k \geqq t}\sum_{m=1}^M F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
+and $F_{m,k}$ is a function such as 
+$$F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))=D(0,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
+Since $L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)$ is a function of $X(t),$ we denote it by $g(t,X(t)).$ Then CVA is given by the following form. 
+\begin{align}
+\text{CVA}&=E[\int_0^T g(t,X(t))  (E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t] \vee 0)  dt ] \label{defCVA2}.
+\end{align}
+
+
+
 
 With regard to the meaning of $C_0$
 For example CVA is expressed by 
@@ -113,1108 +133,1223 @@ where $$V_0(t) = \sum_{k:T_k\geqq t} E^{Q}[D(t,T) f_k(X^{(k)}) |\mathcal{F}_t].$
 L(t)$ is represented by $X^{(0)}$, and payoff at $T_k$ depend on only $X^{(0)}$ and small number of 
 assets $X^{(k)}$l, where $X=(X^{(1)}, \ldots, X^{(K)})$.
 
+\section{Introduction}
+The credit valuation adjustment (CVA) is, by definition, the difference
+between the risk-free portfolio value and the true portfolio value that takes into account
+default risk of the counterparty. In other words, CVA is the market value of counterparty credit risk.
+After the financial crisis in 2007-2008, it has been widely recognized that even major financial institutions may default.
+Therefore, the market participants has become fully aware of counterparty credit risk.
+In order to reflect the counterparty credit risk in the price of over-the-counter (OTC) derivative transactions,
+CVA is widely used in the financial institutions today.
 
+Although Duffie-Huang \cite{DU} has already introduced the basic idea of CVA  in 1990's, 
+several people reconsidered the theory of CVA related to collateralized derivatives (cf. \cite{FT}) and 
+also efficient numerical calculation methods appeared(cf. \cite{H}).
 
-\section{Main Result}
-\subsection{Setting}
-Let $(\hat{\Omega}, \hat{\mathcal{F}}, Q, \{\mathcal{F}_t\}_{t\geqq 0})$ be a filtered probability space.
-Let $N, d \geqq 1.$
-Let $B^i:[0,\infty )\times \hat{\Omega} \to {\bf R},$ $i=1,\ldots ,d,$ be given 
-by
-$B^i(t,w) =w^i(t),$ $(t,w)\in [0,\infty )\times W_0.$
-Then $ \{ (B^1(t), \ldots ,B^d(t) ; t \in [0,\infty ) \}$ 
+There are two approaches to measuring CVA: unilateral and bilateral (cf. \cite{Gre}). 
+Under the unilateral approach, it is assumed that the bank that does
+the CVA analysis is default-free.
+CVA measured in this way is the current market value of future losses due to the counterparty's potential
+default. The problem with unilateral CVA is that both the bank and the counterparty require a
+premium for the credit risk they are bearing and can never agree on the fair value of the trades in
+the portfolio. Therefore, we have to consider not only the market value of the counterparty's default risk, but also the bank's own counterparty credit risk
+called debit value adjustment (DVA) in order to calculate the correct fair value. 
+Bilateral CVA (it is calculated by netting unilateral CVA and DVA) takes into account the possibility of both the counterparty default and the own default.
+It is thus symmetric between the own company and the counterparty, and results in an
+objective fair value calculation.
+
+Mathematically, unilateral CVA and DVA are calculated in the same way, and bilateral CVA is the difference of them. So we focus on the calculation of 
+unilateral CVA in this paper.
+
+CVA is measured at the counterparty level and there are many assets in the portfolio generally.
+Therefore, we have to be involved in the high dimensional numerical problem to obtain the value of CVA.
+This is one of the reasons why CVA calculation is difficult.
+On the other hand, each payoff usually depends only on a few assets.
+We will focus on this property and suggest an efficient calculation methods of CVA 
+in the present paper.
+
+Let us consider the portfolio consist of the contracts on one counterparty. 
+Let $X^{(m)}(t)$ be ${\bf R}^{N_m}$-valued
+stochastic processes $, m=0, 1, \ldots, M.$ We think that $X(t)=(X^{(0)}(t),\ldots, X^{(M)}(t))$ is an underlying process. 
+We consider the model that the macro factor is determined by $X^{(0)}(t),$ and the payoff of each derivative at maturity $T_k, k=1,\ldots,K,$ is the form of
+$$\sum_{m=1}^M \tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
+Let $T=T_K$ be the final maturity of all the contracts in the portfolio. Let $\tau$ be the default time of the counterparty, $\lambda(t)$ be its 
+hazard rate process, $L(t)$ be the process of loss when the default takes place at time $t$, and $D(t,T)$ be the discount factor process from $t$ to $T$.
+We assume that $D(0,t)$ is the function of $X^{(0)}(t)$ and that $L(t), \lambda(t)$ and $\exp(-\int_0^t \lambda(s)ds )$ are the function of $X(t).$   
+
+Let $\tilde{V}_0(t)$ be total value of all contracts in the portfolio at time $t$ under the assumption that counterparty is default free. Then $\tilde{V}_0(t)$ is given by 
+$$\tilde{V}_0(t) =E[\sum_{m=1}^M \sum_{k; T_k \geqq t}D(t,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
+where $E$ denotes the expectation with respect to the risk neutral measure.
+Then unilateral CVA on this portfolio is the restructuring cost when the counterparty
+defaults.
+So unilateral CVA is given by
+\begin{align}
+\text{CVA}&= E[L(\tau)D(0,\tau)1_{\{\tau <T\}}(\tilde{V}_0(\tau)\vee 0)] \nonumber\\
+&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)D(0,t) (\tilde{V}_0(t) \vee 0)  dt ] \nonumber\\
+&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t) (V_0(t) \vee 0)  dt ] \label{defCVA},
+\end{align}
+where
+$$V_0(t) =E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
+and $F_{m,k}$ is a function such as 
+$$F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))=D(0,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
+Since $L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)$ is a function of $X(t),$ we denote it by $g(t,X(t)).$ Then CVA is given by the following form. 
+\begin{align}
+\text{CVA}&=E[\int_0^T g(t,X(t))  (E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t] \vee 0)  dt ] \label{defCVA2}.
+\end{align}
+
+\section{Main Results}
+Now we prepare the mathematical setting. 
+Let $M \geqq 1$ be fixed, ${N}_{m} \geqq 1, m=1, \cdots, M$, 
+$N= N_0+ \cdots + N_M,$ $ \tilde{N}_m=N_0+N_m,$ and $\tilde{N}=\max_{m=1\ldots,M}\tilde{N}_m$.\\
+Let $W_0$ $ = \{ w\in C([0,\infty );{\bf R}^d); \; w(0) = 0 \} ,$
+${\cal F}$ be the Borel algebra over $W_0$ 
+and $\mu$ be the Wiener measure on $(W_0,{\cal F}).$
+Let $B^i:[0,\infty )\times W_0 \to {\bf R},$ $i=1,\ldots ,d,$ be given 
+by $B^i(t,w) =w^i(t),$ $(t,w)\in [0,\infty )\times W_0.$
+Then $ \{ (B^1(t), \dots ,B^d(t) ; t \in [0,\infty ) \}$ 
 is a $d$-dimensional Brownian motion.
 Let $B^0(t) = t,$ $t \in [0,\infty ).$
-Let $V_0,V_1,\ldots ,V_d$ 
-$ \in C^{\infty}_b({\bf R}^N;{\bf R}^N).$
-Here $C^{\infty}_b({\bf R}^N;{\bf R}^n)$ denotes 
+
+\noindent Let $V^{(0)}_i$ $ \in C^{\infty}_b({\bf R}^{{N}_0}; {\bf R}^{{N}_0}),$ 
+$V^{(m)}_i \in C^{\infty}_b({\bf R}^{{N}_0}\times {\bf R}^{{N}_m};{\bf R}^{{N}_m}), i =0, \cdots, d, m=1, \cdots, M.$
+Here $C^{\infty}_b({\bf R}^m;{\bf R}^n)$ denotes 
 the space of ${\bf R}^n$-valued smooth functions defined 
-in ${\bf R}^N$ whose derivatives of any order are bounded.
-We regard elements in $C^{\infty}_b({\bf R}^N;{\bf R}^N)$ 
-as vector fields on ${\bf R}^N.$
-
-Let $K \geqq 1$ be fixed, ${N}_k, d_k \geqq 1, k=1, \cdots, K$, 
-$N= N_0+ \cdots + N_K$, $d=d_0+\cdots +d_K$, 
-$ \tilde{N}_k=N_0+N_k$ and $\tilde{d}_k=d_0+d_k$.\\
-Let we define a projection $\pi_k: {\bf R}^N \to {\bf R}^{\tilde{N}_k}, k=1,\ldots,K,$ as 
-$$ \pi^{(k)}(x)= \tilde{x}_k, \quad k=1,\ldots,K,$$
-where $x=(x_0,x_1, \cdots, x_K)$, $\tilde{x}_k=(x_0,x_k)$, and $x_i \in {\bf R}^{N_k}, i=1,\ldots,K$.\\
-Then we also assume that $\pi_k(X(t,x))$  is represented as the solution of Stochastic differential equation
-under the following setting.
-
-Let $\mathcal{I} = \{(k,i); 1 \leqq k \leqq K , 1 \leqq i \leqq d_k \}$, $B^{k,i}:[0,\infty )\times W_0 \to {\bf R},$ $(k,i) \in \mathcal{I}$ be given 
-by $B^{k, i}(t,w) =w^{k, i}(t),$ $(t,w)\in [0,\infty )\times W_0.$
-Then $\{B^{k,i}(t); t \in [0,\infty ), (k,i)\in \mathcal{I} \}$ 
-is a $d$-dimensional Brownian motions such that
-$$d\langle B^{k, i}, B^{l, j} \rangle(t) = \rho_{k, i}^{l,j}dt,$$
-where $ \rho_{k,i}^{l,j}: \mathcal{I} \times \mathcal{I} \to [-1,1] $ is a positive definite matrix. We further assume that
-\begin{align*}
-&\rho_{i, j}^{k,l}(t) = \delta_{i,j}, \quad k =l,\\
-&\rho_{i, j}^{k,l}(t) =  0, \quad k\neq l, k=0 \ \text{or} \ l =0,
-\end{align*}
-where $\delta_{i,j}$ is Kronecker's delta.\\
-We define filtration $\{\mathcal{F}_t\}_{0\leqq t \leqq T}$ as
-$$\mathcal{F}_t= \sigma \{B^{k,i}(s); s \in [0,t], (k,i)\in \mathcal{I} \}.$$
-
-\noindent Let $B^{k,0}(t) = t,$ $t \in [0,\infty ), k=0, \cdots, K.$
-Let $V_{0, i}$ $ \in C^{\infty}_b({\bf R}^{{N}_0}; {\bf R}^{{N}_0}), i =0,\cdots, d_0,$
-$V_{k, i} \in C^{\infty}_b({\bf R}^{{N}_0}\times {\bf R}^{{N}_k};{\bf R}^{{N}_k}), i =0, \cdots, d_k, k=1, \cdots, K.$
-Here $C^{\infty}_b({\bf R}^{N} ;{\bf R}^{n})$ denotes 
-the space of ${\bf R}^{n}$-valued smooth functions defined 
-in ${\bf R}^{N}$ whose derivatives of any order are bounded.
-We regard elements in $C^{\infty}_b({\bf R}^{N};{\bf R}^{N})$ 
-as vector fields on ${\bf R}^N.$\\
+in ${\bf R}^m$ whose derivatives of any order are bounded.
+We regard elements in $C^{\infty}_b({\bf R}^n;{\bf R}^n)$ 
+as vector fields on ${\bf R}^n.$
 
 
-\noindent Now let ${X}^{(0)}(t,{x}_0),$  ${x}_0\in {\bf R}^{{N}_0},$ 
-${X}^{(k)}(t,{x}_k),$  ${x}_k\in {\bf R}^{{N}_k},$ 
-be the solution to the Stratonovich stochastic integral equation 
+\noindent Now let us consider the following Stratonovich stochastic differential equations.
 \begin{equation}
-{X}^{(0)}(t,x_0) = {x}_0 + \sum_{i=0}^{d_0} \int_{0}^{t} V_{0, i}({X}^{(0)}(s,{x}_0))\circ dB^{0, i}(s),
+{X}^{(0)}(t,x_0) = {x}_0 + \sum_{i=0}^{d} \int_{0}^{t} V^{(0)}_{ i}({X}^{(0)}(s,{x}_0))\circ dB_i(s),
 \label{eq:SDE0}
 \end{equation}
-\begin{equation}
-{X}^{(k)}(t,x_k) = {x}_k + \sum_{i=0}^{d_k} \int_{0}^{t} V_{k, i}({X}^{(0)}(s,{x}_0), {X}^{(k)}(s,{x}_k))\circ dB^{k, i}(s).
-\label{eq:SDEk}
-\end{equation}
- To consider (\ref{eq:SDE0}) and (\ref{eq:SDEk}) together, we further prepare the following notation for each $k= 1,\ldots, K$.
- Let $\tilde{x}_k=(x_0, x_k), \pi_k{X}(t,\tilde{x}_k)=(X^{(0)}(t, x_0),X^{(k)}(t, x_k)), $
- \begin{align*}
- \tilde{B}^{k,i}(t)= 
- \begin{cases}
- B^{0,i}(t), \quad  0 \leqq i \leqq d_0, \\
- B^{k,i}(t), \quad d_0+1 \leqq i \leqq \tilde{d}_k.
- \end{cases}
- \end{align*}
- Let $\tilde{V}_{k, i} \in C^{\infty}_b({\bf R}^{{N}_0}\times {\bf R}^{{N}_k};{\bf R}^{{N}_0}\times{\bf R}^{{N}_k}), i =0, \cdots, \tilde{d}_k,$ be as follows.\\
- For $i=0$
- \begin{align*}
- \tilde{V}^j_{k,i}(x_0, x_k)= 
- \begin{cases}
-  V^j_{0,0}(x_0), \quad  0 \leqq j \leqq N_0, \\
- V^j_{k,0}(x_0, x_k), \quad N_0+1 \leqq j \leqq \tilde{N}_k,\\
-\end{cases}
- \end{align*}
-for $ 1\leqq i \leqq d_0$
- \begin{align*}
- \tilde{V}^j_{k,i}(x_0, x_k)= 
- \begin{cases}
- V^j_{0,i}(x_0), \quad  0 \leqq j \leqq N_0, \\
- 0, \quad  N_0+1 \leqq j \leqq \tilde{N}_k, \\
- \end{cases}
- \end{align*}
-and for $ d_0+1 \leqq i \leqq \tilde{d}_k,$
-  \begin{align*}
- \tilde{V}^j_{k,i}(x_0, x_k)= 
- \begin{cases}
-0, \quad  N_0+1 \leqq j \leqq \tilde{N}_k, \\
- V^j_{k,i}(x_0, x_k), \quad N_0+1 \leqq j \leqq \tilde{N}_k.\\
- \end{cases}
- \end{align*}
-Then (\ref{eq:SDE0}) and (\ref{eq:SDEk}) are written as 
 \begin{align}
-\pi_k{X}(t,\tilde{x}_k) = \tilde{x}_k + \sum_{i=0}^{\tilde{d}_k} \int_{0}^{t} \tilde{V}_{k, i}(\tilde{X}^{(0)}(s,\tilde{x}_0), \pi_k{X}(s,\tilde{x}_k))\circ d\tilde{B}^{k, i}(s).
+{X}^{(m)}(t,\tilde{x}_m) = {x}_m +  \sum_{i=1}^{d} \int_{0}^{t} V^{(m)}_{i}({X}^{(0)}(s,{x}_0), {X}^{(m)}(s,\tilde{x}_m))\circ dB_i(s),
+\label{eq:SDEk}
 \end{align}
-Then there is a unique solution $\pi_k{X}(t,\tilde{x}_k)=({X}^{(0)}(t,{x}_0), {X}^{(k)}(t,{x}_k) )$ 
-to this equation. Moreover we may assume that  $\pi_k{X}(t,\tilde{x}_k)$ 
-is continuous in $t$ and smooth in $\tilde{x}_k$ 
-and $\pi_k{X}(t,\cdot ):{\bf R}^{\tilde{N}_k}\to {\bf R}^{\tilde{N}_k}$ $t \in [0,\infty ),$
-is a diffeomorphism with probability one.
-\\
-
-Let ${\cal A}_{k} =  \{ \emptyset \} \cup 
-\bigcup_{j = 1}^{\infty} \{ 0,1,\ldots , \tilde{d}_k \}^j $ 
-and for $\alpha \in {\cal A}_k$, 
-let $|\alpha | = 0$  if  $\alpha = \emptyset ,$ 
-let $|\alpha | = j$ if 
-$\alpha $ $= (\alpha^1,\ldots ,\alpha^j)$
-$\in \{ 0,1,\ldots , d_k \}^j ,$ and 
-let $ \parallel \alpha \parallel $ 
-$ = |\alpha | + \mbox{card}\{ 1 \leqq i \leqq |\alpha | ; 
-\; \alpha^i = 0 \}.$ 
-Let ${\cal A}_k^{*}$ and ${\cal A}_k^{**}$ denote 
-${\cal A}_k\setminus \{ \emptyset \} $ and
-${\cal A}_k\setminus \{ \emptyset , 0 \},$ respectively.
-Also, for each $m\geqq 1,$ ${\cal A}^{**}_{k, \leqq m},$  
-$\{ \alpha \in {\cal A}^{**}_k; \; \parallel \alpha \parallel \leqq m \} .$
-
-We define vector fields $\tilde{V}_{k,[\alpha ]},$ $\alpha \in {\cal A},$ 
-inductively by
-$$
-\tilde{V}_{k, [\emptyset ]} = 0, 
-\qquad \tilde{V}_{k, [i]} = \tilde{V}_{k,i}, 
-\quad i = 0,1,\ldots ,\tilde{d}_k,
-$$
-$$
-\tilde{V}_{k, [\alpha *i]} = [\tilde{V}_{k, [\alpha ]},\tilde{V}_{k,i}], 
-\qquad i = 0,1,\ldots ,\tilde{d}_k.
-$$
-Here $\alpha *i$ 
-$= (\alpha^1,\ldots ,\alpha^j,i)$
-for $\alpha $ $= (\alpha^1,\ldots ,\alpha^j)$ and $i = 0,1,\ldots ,\tilde{d}_k.$
-
-We say that a system $\{ \tilde{V}_{k,i} ; i=0,1,\ldots ,\tilde{d}_k \}$ of vector fields 
-satisfies the following condition (UFG).
-
-\noindent
-(UFG) There are an integer $\ell_k$ 
-and $\varphi_{\alpha,\beta} \in C^{\infty}_b({\bf R}^{\tilde{N}_k}),$ 
-$\alpha \in {\cal A}_k^{**},$ $\beta \in {\cal A}^{**}_{k, \leqq \ell_k},$ 
-satisfying the following.
-$$
-{\displaystyle \tilde{V}_{k,[\alpha ]} 
-= \sum_{\beta \in {\cal A}^{**}_{\leqq \ell_k}}
-\varphi_{k, \alpha,\beta}\tilde{V}_{k,[\beta ]}},
-\qquad 
-\alpha \in {\cal A}_k^{**}.
-$$
-$$
-{\displaystyle \tilde{V}_{k,[\alpha ]} 
-= \sum_{\beta \in {\cal A}^{**}_{\leqq \ell_k}}
-\varphi_{k, \alpha,\beta}\tilde{V}_{k,[\beta ]}},
-\qquad 
-\alpha \in {\cal A}_k^{**}, k=1,\ldots,K.
-$$
-
-
-Let $A_k(x)$ $= (A_k^{ij}(x))_{i,j=1,\ldots ,\tilde{N}_k},$ $t>0$ $x\in {\bf R}^{\tilde{N}_k}$ 
-be a $\tilde{N}_k \times \tilde{N}_k$ symmetric matrix given by
-$$
-A_k^{ij}(x) 
-= \sum_{\alpha \in {\cal A}^{**}_{k, \leqq \ell_k}}
-\tilde{V}^i_{k,[\alpha ]}(x)\tilde{V}^j_{k,[\alpha ] }(x),
-\qquad i,j=1,\ldots , \tilde{N}_k.
-$$
-Let $h_k(x) = \det A_k(x), x\in {\bf R}^{ \tilde{N}_k}$ 
-and $E_k= \{ x\in {\bf R}^{\tilde{N}_k};\; h_k(x)>0\} .$
-By \cite{KS2}, we see that if $x\in E_k,$ 
-the distribution law of $\pi_k{X}(t,x)$ under $\mu$ has a smooth density function
-$p^{(k)}(t,x,\cdot ):{\bf R}^{\tilde{N}_k}\to [0,\infty )$ for $t>0.$
-Moreover, by \cite{KM} we see  that $\int_{E_k} p^{(k)}(t,x,y)dy =1,$ $x\in E_k.$ 
-We have $p_k(t,x,y)=0, y\in E_k^c$ by \cite{KM}.\\
-Let $\mathcal{L}(E_k)$ be the space of measurable functions on $E_k$ such that
-for any $F\in \mathcal{L}(E_k)$ there exists a $g, h \in C^{\infty}({\bf R}^{N};{\bf R})$ and
-$F=g\vee h$.
-
-Let $\nu^{(k)}_t, t\geqq 0,$ be the probability law of $\pi_k{X}(t, \tilde{x}_k)$ under $\mu$.
-Then we see that $\nu^{(k)}_0$ is the probability measure concentrated in $\tilde{x}_k$ and $\nu^{(k)}_t(dx)
-=p^{(k)}(t,\tilde{x}_k, x)dx, t>0.$
-
-For any $t>s\geqq 0,$ 
-we can define a linear contraction map 
-$P^{(k)}_{s,t}:L^1(E_k;d\nu^{(k)}_t)\to L^1(E_k;d\nu^{(k)}_s)$ by
-$$
-(P^{(k)}_{s,t}f)(x) = \int_{E_k} p^{(k)}(t-s,x,y)f(y) dy,
-\qquad x \in E_k,\ f\in L^1(E_k;d\nu_t).
-$$
-
-Now let $X(t,x),$ $t\in [0,\infty ),$ $x\in {\bf R}^N,$ 
-be the solution to the Stratonovich stochastic integral equation 
+where $x_m \in {\bf R}^{N_m}, \tilde{x}_m=(x_0, x_m) \in {\bf R}^{{N}_0}\times {\bf R}^{{N}_m}, m=1,\ldots,M.$\\
+ Let $\tilde{X}^{(m)}(t,\tilde{x}_m) = ({X}^{(0)}(t,{x}_0), {X}^{(m)}(t,\tilde{x}_m))$ and $\tilde{V}^{(m)}_ i \in C^{\infty}_b({\bf R}^{{N}_0}\times {\bf R}^{{N}_k};{\bf R}^{{N}_0}\times{\bf R}^{{N}_k}), i =0, \cdots, d, \ m = 1,\cdots, M$ be \begin{align*}
+ \tilde{V}^{(m)}_{i}(\tilde{x}_m)= 
+ \begin{pmatrix}
+ V^{(0)}_{ i}(x_0)\\
+ V^{(m)}_{ i}(\tilde{x}_m)
+ \end{pmatrix} .
+ \end{align*}
+Then we have
+\begin{align}
+\tilde{X}^{(m)}(t,\tilde{x}_m) = \tilde{x}_m + \sum_{i=0}^{d} \int_{0}^{t} \tilde{V}^{(m)}_i(\tilde{X}^{(m)}(t,\tilde{x}_m) )\circ d B_i(s).
+\end{align}
+There is a unique solution $\tilde{X}^{(m)}(t,\tilde{x}_m) $ 
+to this equation. 
+Then $X(t,x), x\in {\bf R}^N$ also satisfies the solution to the following Stratonovich stochastic differential equation. 
 \begin{equation}
-X(t,x) = x + \sum_{i=0}^{d} \int_{0}^{t} V_i(X(s,x))\circ dB^i(s).
+X(t,x) = x + \sum_{i=0}^{d} \int_{0}^{t} {V}_i(X(s,x))\circ d {B}^i(s),
 \label{eq:SDE}
 \end{equation}
-Then there is a unique solution 
-to this equation. 
-Moreover we may assume that  $X(t,x)$ 
-is continuous in $t$ and smooth in $x$ 
-and $X(t,\cdot ):{\bf R}^N\to {\bf R}^N,$ $t \in [0,\infty ),$
-is a diffeomorphism with probability one.
+where ${V}_i, i =1,\ldots, d$ is
+\begin{align*}
+ {V}_{i}(x)= 
+ \begin{pmatrix}
+ V^{(0)}_{ i}(x_0)\\
+  V^{(1)}_{ i}(\tilde{x}_1)\\
+ \vdots \\
+ V^{(M)}_{ i}(\tilde{x}_M)
+ \end{pmatrix} .
+ \end{align*}
 
-\subsection{Approximation of CVA}
-In this paper, we consider how to approximate $c_0$.
+We assume that vector fields ${V}_i, i=1,\ldots,d,$ satisfy condition (UFG) stated in the section \ref{vec}. 
+Let $E_m $ be defined by (\ref{defE}) in Section \ref{vec}. By \cite{KM}, if $\tilde{x}_m \in E_m,$ 
+the distribution law of $\tilde{X}^{(m)}(t,\tilde{x}_m)$ under $\mu$ has a smooth density function
+$p^{(m)}(t,\tilde{x_m},\cdot ):{\bf R}^{\tilde{N}_m}\to [0,\infty )$ for $t>0, m=1, \ldots, M.$\\
+Let $x^{*} =(x_0^*, \ldots, x_M^*) \in {\bf R}^N.$ We assume that the underlying asset process is $X(t)=X(t, x^*)$.
+We also assume that
+$$\tilde{x}^*_m=(x_0^*, x_m^*) \in E_m, m=1,\ldots, M.$$
+Let $\hat{{\cal D}}({\bf R}^n)$ denotes the space of functions on ${\bf R}^n$ given by
+ $$\hat{{\cal D}}({\bf R}^n) =\{ f \in C^2({\bf R}^n); \|\frac{\partial^{\alpha}f}{\partial x^{\alpha}}\|_{\infty} <\infty, \text{for  } 1 \leqq |\alpha| \leqq 2 \},$$
+ where $\|f\|_{\infty}=\sup \{|f(x)|; x\in {\bf R}^n\}$.\\
+${Lip}({\bf R}^n)$ denotes the space of Lipschitz continuous functions on ${\bf R}^n,$  and
+we define a semi-norm $\|\cdot \|_{Lip}$ on $Lip({\bf R}^n)$ by
+$$\|f\|_{{Lip}}=\sup_{x,y\in {\bf R}^n, x \neq y} \frac{|f(x)-f(y)|}{|x-y|},
+\quad f\in {Lip}({\bf R}^n).$$
+Let ${\cal M}({\bf R}^n)$ be the linear subspace of ${Lip}({\bf R}^n)$  spanned by
+$\{f \vee g;  f, g \in {\cal D}({\bf R}^n)\}.$\\
+\\
+We define linear operators 
+$P_{t}:{Lip}({\bf R}^N) \to {Lip}({\bf R}^N), t \geqq 0,$ by
+$$
+(P_{t}f)(x) = E^{\mu}[f(X(t,x))], \quad f\in {Lip}({\bf R}^N),
+$$
+and $P^{(m)}_{t}:{Lip}({\bf R}^{\tilde{N}_m}) \to {Lip}({\bf R}^{\tilde{N}_m}), t \geqq 0 , m=1, \ldots,M,$ by
+$$
+(P^{(m)}_{t}f)(\tilde{x}_m) = E^{\mu}[f(\tilde{X}^{(m)}(t,\tilde{x}_m))], \quad f \in {Lip}({\bf R}^{\tilde{N}_m}).
+$$
+We remind that $L(t)\exp(-\int_0^t\lambda(s)ds)\lambda(t) $ is represented by
+$$
+L(t)\exp(-\int_0^t\lambda(s)ds)\lambda(t) = g(t, X(t,x^*)).
+$$
+We assume that $g: [0,T] \times {\bf R}^N \to [0,\infty)$ satisfies the following two conditions.\\
+(1) $g(t,x)$ is differentiable in $t$ and there is an integer $n_1,$ and a constant $C_1 >0$ such that
+$$\sup_{t\in[0,T]}| \frac{\partial}{\partial t}g(t,x)|  \leqq C_1(1+|x|^{n_1})
+,\quad x \in {\bf R}^N.$$
+(2) $g(t,x)$ is $2$-times coninuously differentiable in $x$ and there is an integer $n_2,$ and a constant $C_2 >0$ such that
+$$
+\sup_{t\in[0,T]} |\frac{\partial^{\alpha}}{\partial x^{\alpha}}g(t,x)| \leqq C_2(1+|x|^{n_2}),\quad x \in {\bf R}^N
+$$
+for any multi index $|\alpha|\leqq 2.$
+\\
+We assume that a discounted payoff functions $F_{m,k}, m=1,\ldots, M, k=1,\ldots,K$ in equation (\ref{defCVA2}) 
+belong to ${\cal M}({\bf R}^{\tilde{N}_m}).$
+Under the assumptions above, CVA $c_0$ is given by 
 \begin{align}
-c_0 = E^{\mu}[\int_{0}^T \{( \sum_{k:T_k\geqq t} E^{\mu}[F_k(\pi_k{X}(T_k)) |\mathcal{F}_t])\vee0\}dt ]
+c_0 = E^{\mu}[\int_{0}^T \{ g(t,X(t,x^*)) 
+E^{\mu}[ \sum_{m=1}^M \sum_{k:T_k\geqq t} F_{m,k}(\tilde{X}^{(m)}(T_k, \tilde{x}^*_m)) |\mathcal{F}_t] \vee0\}dt ].
 \end{align}
-Let 
-$$\Delta = \{0=t_0 < t_1 < \ldots < t_n= T \}$$ be a subdivision of $[0,T]$, where $n(\Delta)$  be the number of descretization and $|\Delta| = \max{t_{i+1}-t_i}$. We assume that $\{T_k; k=1,\ldots,K\}$ are included in $\Delta$. Then we set
-$$c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)E^{\mu}[\{\sum_{k; T_k \geqq t_{i+1}}^K(P_{T_k-t_i}^{(k)}F_k)(X^{(k)}(t_i,x))) \}\vee 0].
-$$
-When we denote the detail of subdivision as 
-$$T_{k-1} = t_{i_{(k-1)}} < \ldots < t_{i_k-1} < t_{i_k}=T_k, k=1,\ldots,K,$$
-then $c_{\Delta}$ is written as
-$$
-c_{\Delta}=\sum_{k=1}^K\sum_{i=i_{(k-1)}}^{{i_{k}}-1}(t_{i+1}-t_i) E^{\mu}[ \{\sum_{k'=k}^K(P_{T_k-t_i}^{(k')}F_{k'})(\pi_{k'} X(t_i,x))\}\vee0 ]
- $$
-
-\subsection{Numerical Simulation Algorithm}
+We will introduce numerical calculation methods by Monte Carlo simulation for $c_0$.\\
+\\
 Let $(\Omega ,{\cal F},P)$ be a probability space,
 and $X_{\ell }:[0,\infty )\times \Omega \to {\bf R}^N,$ 
 $\ell =1,2,\ldots ,$ be continuous stochastic processes such that 
-the probability laws on $C([0,\infty );{\bf R}^N)$ of
-$X_{\ell}(\cdot )$ under $P$ and of $X(\cdot ,\tilde{x}_0)$ under $\mu$ 
-are the same for all $\ell$ $=1,2,\ldots ,$ and that
+each probability law on $C([0,\infty );{\bf R}^N)$ of
+$X_{\ell}(\cdot )$ under $P$ is the same as  that of $X(\cdot ,{x}^*)$  for all $\ell$ $=1,2,\ldots ,$ and that
 $\sigma \{ X_{\ell}(t); \; t\geqq 0\},$ $\ell =1,2,\ldots ,$ are independent.\\
-
-Let ${\cal F}_{t}^{(L)},$ $t\geqq 0,$ $L=0,1,\ldots , \infty $ be 
-sub $\sigma$-algebra of ${\cal F}$ given by
-$$
-{\cal F}_{t}^{(L)} 
-= \sigma \{ X_{\ell}(s); \; s\in [0,t], \ \ell =1,2,\ldots .L \},
-$$
-and
-$$
-{\cal F}_{t}^{(\infty )} 
-= \sigma \{ X_{\ell}(s); \; s\in [0,t], \ \ell =1,2,\ldots \} .
-\int_0^{\infty}f(x)dx.
-$$
-\\
-Let $0 < T_1 < \cdots < T_K <T.$
-We define a random linear operator (Stochastic mesh operator) $Q_{t,T_k,\varepsilon}^{(k)}, 0 \leqq t \leqq T, 0 < \varepsilon <\min_{1\leqq k \leqq K}(T_k-T_{k-1}),$ defined for $f \in \mathcal{L}(E_k)$ by
+Let us define projections $\pi_m: {\bf R}^N \to {\bf R}^{\tilde{N}_m}, m=1,\ldots,M,$ by
+$ \pi_m(x)= \tilde{x}_m=(x_0,x_m),$ 
+and define $\varepsilon_0 >0$ by
+$\varepsilon_0 =\min_{1\leqq k \leqq K}(T_k-T_{k-1}).$
+We define random linear operators (stochastic mesh operators)
+ $Q_{t,T_k,\varepsilon}^{(m)}=Q_{t,T_k,\varepsilon}^{(m,L,\omega)}, 0 \leqq t \leqq T, 0 < \varepsilon <\varepsilon_0,$ 
+on $Lip({\bf R}^{\tilde{N}_m})$ by
 \begin{align*}
-&(Q_{t,T_k,\varepsilon}^{(k,L,\omega)}f)(x)
+&(Q_{t,T_k,\varepsilon}^{(m,L,\omega)}f)(\tilde{x}_m)
 =
 \begin{cases}
-\frac{1}{L} \sum_{l=1}^L \frac{f(X_l^{(k)}(T_k))p^{(k)}(T_k-t, x, \pi_k( X_l(T_k)))}{q_{t,T_k}^{(k,L,\omega)}(\pi_k (X_l(T_k)))}, 
-\quad 0 \leqq t <T_k-\varepsilon ,\\
-f(x), \quad T_k - \varepsilon \leqq t < T_k, \\
-0, \quad T_k \leqq t \leqq T .
+\frac{1}{L} \sum_{\ell=1}^L \frac{f(X_{\ell}^{(m)}(T_k))p^{(m)}(T_k-t, \tilde{x}_m, \pi_m( X_{\ell}(T_k)))}{q_{t,T_k}^{(m,L,\omega)}(\pi_m (X_{\ell}(T_k)))}, 
+\quad 0 \leqq t < T_k-\varepsilon ,\\
+f(\tilde{x}_m), \quad T_k - \varepsilon \leqq t \leqq T_k, \\
+0, \quad T_k < t \leqq T .
 \end{cases}\\
-&\text{where} \quad q_{t,T_k}^{(k,L,\omega)}(y)=\frac{1}{L}\sum_{l=1}^L p^{(k)}(T_k-t, \pi_k(X_{\ell}(t)), y).
+&\text{where} \quad q_{t,T_k}^{(m,L,\omega)}(\tilde{y}_m)=\frac{1}{L}\sum_{\ell=1}^L p^{(m)}(T_k-t, \pi_m(X_{\ell}(t)), \tilde{y}_m)).
 \end{align*}
 
-We will consider three algorithms as follows. All algorithm are based on the 
-approximation of $P^{(k)}_{T-t}$ by Stochastic mesh operator $Q_{t,T,\varepsilon}^{(k)}$.\\
-
-\noindent {\it Algorithm 1.}
-
-\noindent \qquad[Step1] Generate independent paths 
-$${\bf X}_1 = \{X_{\ell }(t); 0 \leqq t \leqq T, \ell =1,2,\ldots ,L\}$$
-$${\bf X}_2=\{X^{'}_{m }(t); 0 \leqq t \leqq T,  m =1,2,\ldots ,M\}$$
-\qquad[Step2]  For each path of ${\bf X}_2$ and each time grid $t_i$, we construct
-$$(Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k(X^{'}_m(t_i))), \text{for every}\  k \  \text{such that} \ T_k > t_i ,$$
-\qquad \qquad where $Q_{t,T,\varepsilon}^{(k,L,\omega)}$ is constructed by paths ${\bf X}_1$.
-
-\noindent \qquad [Step3] Calculate
-$$\tilde{c}_1=\frac{1}{M} \sum_{m=1}^M \sum_{i=0}^{n-1} (( \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k(X^{'}_m(t_i))))\vee0)(t_{i+1}-t_i). $$
-
-Although we generate the continuous paths in Step1, for the actual simulation, we use only values on the 
-discrete time grids $\Delta_n$.
-
-\noindent Algorithm1 is simple approximation such that  we substitute $P^{(k)}_{T_k-t} F_k$ by $Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}$.
-On the other hand, notice the following equation,
-\begin{align*}
-&E^{\mu}[( \sum_{k:T_k\geqq t_{i+1}} E^{\mu}[F_k(\pi_k{X}(T_k)) |\mathcal{F}_t])\vee0]\\
-=&E^{\mu}[( \sum_{k:T_k\geqq t_{i+1}} E^{\mu}[F_k(\pi_k{X}(T_k)) |\mathcal{F}_t])
- 1_{\{\sum_{k:T_k\geqq t_{i+1}} (P^{(k)}_{T_k-t} F_k)(\pi_k{X}(t))) \geqq 0\}}]\\
-=&E^{\mu}[ \{ \sum_{k:T_k\geqq t_{i+1}} F_k(\pi_k{X}(T_k))\}
- 1_{\{\sum_{k:T_k\geqq t_{i+1}} (P^{(k)}_{T_k-t} F_k)(\pi_k{X}(t))) \geqq 0\}}].
-\end{align*}
-Based on this equation, we can consider the following algorithm.\\
-
-\noindent {\it Algorithm 2.}
-
-\noindent \qquad[Step1] Generate independent paths 
-$${\bf X}_1 = \{X_{\ell }(t); 0 \leqq t \leqq T, \ell =1,2,\ldots ,L\}$$
-$${\bf X}_2=\{X^{'}_{m }(t); 0 \leqq t \leqq T,  m =1,2,\ldots ,M\}$$
-\qquad [Step2]  For each path of ${\bf X}_2$ and each time grid $t_i$, we construct
-$$(Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k(X^{'}_m(t_i))), \text{for every}\  k \  \text{such that} \ T_k > t_i ,$$
-\qquad where $Q_{t,T,\varepsilon}^{(k,L,\omega)}$ is constructed by paths ${\bf X}_1$.
-
-\noindent \qquad [Step3] Calculate
-$$\tilde{c}_2= \frac{1}{M} \sum_{m=1}^M \sum_{i=0}^{n-1} \{ \sum_{k:T_k\geqq t_{i+1}}F_k(X_m^{'(k)}(T_k))\}
- 1_{\{\sum_{k:T_k\geqq t_{i+1}} (Q_{t,T,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k(X^{'}_m(t_i)))) \geqq 0\}}(t_{i+1}-t_i).$$ 
- 
- \noindent In this algorithm, we do not use the approximation $Q_{t,T,\varepsilon}^{(k,L,\omega)}$ explicitly.
- We use it only to judge whether $(P^{(k)}_{T_k-t} F_k)(\pi_k(X^{'}_m(t_i))))>0$ or not. 
- So the approximation has no error when the signs of  $(Q_{t,T,\varepsilon}^{(k,L,\omega)} F_k)(\pi_k{X}(t)))$ and $(P^{(k)}_{T_k-t} F_k)(\pi_k(X^{'}_m(t_i)))$ are the same, even if there is large difference between their values.
-
-In Algorithm 1 and 2, we use two independent sets of paths as ${\bf X}_1$ and ${\bf X}_2$.
-One paths are used for Monte-Carlo simulation and another paths are used to construct Stochastic mesh operator.
-But we can use the same paths for Monte-Carlo simulation and construction  of Stochastic mesh operator \\
-
-\noindent {\it Algorithm 3.}
-
-\noindent \qquad [Step1] Generate independent paths 
-$${\bf X}_1 = \{X_{\ell }(t); 0 \leqq t \leqq T, \ell =1,2,\ldots ,L\}$$
-
-\noindent \qquad[Step2] For each path of ${\bf X}_2$ and each time grid $t_i$, we construct
-$$(Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k(X_{\ell}(t_i))), \text{for every}\  k \  \text{such that} \ T_k > t_i ,$$
-\qquad \qquad \qquad where $Q_{t,T,\varepsilon}^{(k,L,\omega)}$ is constructed by paths ${\bf X}_1$.
-
-\noindent \qquad [Step3] Calculate
-$$\tilde{c}_3=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} (( \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k(X_{\ell}(t_i)))\vee0)(t_{i+1}-t_i). $$
-
-\subsection{Main Theorem}
-Let  $C^q_b({\bf R}^n)$ be the the space q-times continuously differentiable functions such that
-$$\frac{\partial^{|\alpha|}f}{\partial x^{\alpha}} < \infty, \text{for any}  f \in C^q_b({\bf R}^n), |\alpha| \leqq q.$$
-Let $C_{Lip}({\bf R}^n)$, be the space of Lipshitz continuous functions and for $f\in C_{Lip}({\bf R}^n)$,
-$$\|f\|_{C_{Lip}}=\sup_{x,y\in {\bf R}^n,
-x \neq y} \frac{|f(x)-f(y)|}{|x-y|}.$$
-Let $C_{Lip,q}({\bf R}^n), q\geqq 0$ be the linear subspace of $C_{Lip}({\bf R}^n)$  spanned by
-$$\{f \vee g;  f, g \in C^q_b({\bf R}^n)\}.$$
-
-Related to the Algorithm 1 to 3, we define 
-$\hat{c}_i : \Omega \to {\bf R} , i=1,2,3$ as follows.
-\begin{align*}
-&\hat{c}_1(\omega) =E^{\mu} [ \sum_{i=0}^{n-1}(t_{i+1}-t_{i}) \{(\sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k{X}(t))\vee0\} ],\\
-&\hat{c}_2(\omega)=\sum_{i=0}^{n-1}(t_{i+1}-t_{i}) E^{\mu}[( \sum_{k:T_k\geqq t_{i+1}}F_k(\pi_k X(T_k)))
- 1_{\{\sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k X(t_i))) \geqq 0\}}]\\
-&\hat{c}_3(\omega)=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} (( \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k(X_{\ell}(t_i)))\vee0)(t_{i+1}-t_i).
-\end{align*}
-
-To approximate $c_0$ by $\hat{c}_1$ and $\hat{c}_2$, we estimate the error between them in the following.
-Let $\ell_0 = \max\{\ell_k; k=1,\ldots, K\}$ and $\tilde{N} = \max\{\tilde{N}_k; k=1,\ldots, K\}$.
-\begin{theorem}\label{main1}
-If $F_k \in C_{Lip,q}({\bf R}^{\tilde{N}_k}), k=1,\ldots,K.$ 
- There are $\Omega_{L} \in \mathcal{F}, L\geqq 1$ and $C_{p,\delta}>0$ such that $P(\Omega_{L}^c) \to 0, L\to \infty$
- and
+Let $\Pi$ denotes the set of partitions $\Delta=\{t_0,t_1,\ldots, t_n\}$ such that 
+$0=t_0 < t_1 < \ldots < t_n= T$ and that   
+$\{T_k; k=1,\ldots,K\} \subset \Delta.$
+Let $|\Delta|=\max_{i=1,\ldots,n}{(t_{i+1}-t_i)}.$
+We define estimators $\hat{c}_i=\hat{c}_i(\varepsilon,\Delta, L) : \Omega \to {\bf R}, i=1,2,$ in the following.
 \begin{align}
-|\hat{c}_1(\omega)-c_0| \leqq C_{p,\delta}L^{-\frac{3/2(1-\delta)^2}{2+(1+\delta)(\tilde{N}+1)\ell_0/2}},
+&\hat{c}_1(\varepsilon, \Delta, L)(\omega) \nonumber\\
+=&\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} (t_{i+1}-t_i) g(t_i,X_{\ell}(t_i))
+(\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_{\ell}(t_i)))\vee0), \label{app1}\\
+\text{and}\nonumber \\
+&\hat{c}_2(\varepsilon, \Delta, L)(\omega)\nonumber\\
+=&\sum_{i=0}^{n-1}(t_{i+1}-t_{i}) E^{\mu}[g(t_i,X(t_i, x^*)) ( \sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} F_{m,k}(\pi_k X(T_k, x^*))) \nonumber \\
+& \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \times 1_{\{\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k X(t_i,x^*))) \geqq 0\}}]. \label{app2}
 \end{align}
-for any $\omega \in \Omega_{L}$ and $L \geqq 1$.
-If there exists $\gamma \in (0,1]$ such that
-$$\int_0^T E^{\mu}
-[ 1_{| \sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t}^{(k)}F_k)(\pi_k (X(t)))| \leqq \theta\} } ]dt =O(\theta^{\gamma})
- , \text{as} \ \theta \downarrow 0,$$
-\begin{align}
-|\hat{c}_2(\omega)-c_0| \leqq C_{p,\delta}L^{-\frac{3(\gamma+1)(1-\delta)^2}{(\gamma+2)(2+(1+\delta)(\tilde{N}+1)\ell_0/2)}},\end{align}
-\end{theorem}
-
-\begin{remark}
-Theorem \ref{main1} means that the estimation of $\hat{c}_2$ is better than $\hat{c}_1$. 
-Especially if $\gamma = 1$, the convergence order for the number of paths  improves by $4/3$ times.
-\end{remark}
-
-\begin{remark}
-Let $X_{m}^{'(k)}:[0,\infty ) \times \Omega \to {\bf R}^N_k,$ 
-$m =1,2,\ldots ,$ be continuous stochastic processes, i.i.d with
-$X_{l}(\cdot )$ $l$ $=1,2,\ldots$.
-When we carry out the numerical simulation, we approximate $c_0$ by 
-$$\hat{c}_1^{'}= \frac{1}{M} \sum_{m=1}^M \sum_{i=0}^{n-1} (( \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(k,L,\omega)}F_k)(X_m^{'(k)}(t_i)))\vee0)(t_{i+1}-t_i) ,$$ 
-and
-$$\hat{c}_2^{'}= \frac{1}{M} \sum_{m=1}^M \sum_{i=0}^{n-1} ( \sum_{k:T_k\geqq t_{i+1}}F_k(X_m^{'(k)}(T_k)))
- 1_{\{\sum_{k:T_k\geqq t_{i+1}} (Q_{t,T,\varepsilon}^{(k,L,\omega)}F_k)(X_m^{'(k)}(t))) \geqq 0\}}(t_{i+1}-t_i),$$ 
- instead of $\hat{c}_1$ and $\hat{c}_2$.
- For simplicity we ignore the error from the difference between 
- expectation and monte-carlo simulation. 
-\end{remark}
-
+Our main results are following.
 \begin{theorem} \label{main2}
-If $\Delta_n\leqq C L^{-1/2}$
-\begin{align*}
-&E[|\hat{c}_3(\omega)-c_0|]
-\leqq   C_{p,\delta}L^{-\frac{(1-\delta)^2}{1+(1+\delta)(\tilde{N}+1)\ell_0/2}},
-\end{align*}
+Let $\alpha_0 = (1+\delta)(\tilde{N}+1)\ell_0/4 \vee 1.$ Let $\{\varepsilon_L\}_{L = 1}^{\infty} \subset (0, \varepsilon_0)$ be a sequence and suppose
+ that there is a constant $C_0 \in (0, \infty)$ such that $ \varepsilon_L \leqq C_0 L^{-\frac{1+ \delta}{2(1+\alpha_0)}}, L\geqq 1.$
+ Then there exists a constant $C_1 \in (0,\infty)$ such that
+$$
+E^P[|\hat{c}_1(\varepsilon_L, \Delta, L)-c_{0}|] \leqq C_1 (L^{-\frac{1}{1+\alpha_0}}+|\Delta|)
+$$
+for any $L \geqq 1$ and $\Delta \in \Pi.$
 \end{theorem}
 
-\section{Discretization}
-Let the discretization $\Delta $ be
-$$\Delta: 0=t_0 < t_1 < \ldots < t_n = T,$$
-and let $c_{\Delta}$ be
-$$c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)E^{\mu}[\{\sum_{k; T_k \geqq t_{i+1}}^K(P_{T_k-t_i}^{(k)}F_k)(X^{(k)}(t_i,x))) \}\vee 0].
+\begin{theorem}\label{main1} 
+Let $\alpha_1 = (1+\delta)(\tilde{N}+1)\ell_0/2 \vee 1,$ and
+let $\{\varepsilon_L\}_{L = 1}^{\infty} \subset (0, \varepsilon_0)$ be a sequence such that there is a constant $C_0 \in (0,\infty),$ 
+such that $\varepsilon_L \leqq C_0 L^{-\frac{1+ \delta}{2\alpha_1+1}}, L \geqq 1.$ 
+Suppose that there are constants $ \gamma \in (0,1]$  and $C_{\gamma} \in (0, \infty)$ such that
+ $$\sup_{\Delta} \sum_{i=0}^{n-1} (t_{i+1}-t_i)){\mu} (| \sum_{m=1}^M\sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t_i}^{(m)}F_{m,k})(\pi_m X(t_i,x^*)))| \leqq \theta ) \leqq C_{\gamma}\theta^{\gamma}$$
+for all $ \theta \in (0,1].$\\
+Then then there exists a constant $C_1\ \in (0,\infty)$ and $\tilde{\Omega}(L) \in \mathcal{F},$  $L\geqq 1 ,$ such that
+$$P(\tilde{\Omega}(L)) \to 1, \ L\to \infty,$$
+and
+$$
+1_{\tilde{\Omega}(L)}|\hat{c}_2(\varepsilon_L, \Delta, L)-c_{0}|
+\leqq  C_1
+(L^{-(\frac{1}{2}+ \frac{(1-\delta)}{2 \alpha_1 +1}) \frac{1+\gamma}{2+\gamma}}+|\Delta|)
+$$
+for any $L\geqq 1,$ and $\Delta \in \Pi.$
+\end{theorem}
+
+\begin{remark}\label{actual}
+Let $\tilde{\Omega}'(L)$ be
+$$ \tilde{\Omega}'(L)=\left \{\omega \in \Omega; |\hat{c}_1(\varepsilon_L,\Delta,L) - c_0 | \leqq CL^{-\frac{1-\delta}{1+\alpha_0}} \right\}.$$
+Then by Theorem \ref{main2}, we see that
+$$
+P(\tilde{\Omega}'(L)) \to 1,  L\to \infty,
+$$
+and
+$$1_{\tilde{\Omega}(L) }|\hat{c}_1(\varepsilon_L,\Delta,L)-c_0| \leqq CL^{-\frac{1-\delta}{1+\alpha_0}}.
+$$
+Theorem \ref{main1} shows that the estimation of $\hat{c}_2$ may be better than $\hat{c}_1$. 
+\end{remark}
+
+We can compute the estimators $\hat{c}_i, i=1,2,$ practically in the following way.\\  
+\noindent First, we generate a family of independent paths 
+$${\bf X}_1 = \{X_{\ell }(t); 0 \leqq t \leqq T, \ell =1,2,\ldots ,L\}.$$
+Next, by using ${\bf X}_1$, we compute
+$$(Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_m(t_i))), \text{for every}\  k \  \text{such that} \ T_k > t_i .$$
+Then our estimator $\tilde{c}_1$ is
+$$\tilde{c}_1=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} g(t_i, X_{\ell}(t_i))( \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_{\ell}(t_i)))\vee0)(t_{i+1}-t_i). $$
+We used the same paths for Monte Carlo simulation and construction  of Stochastic mesh operator. 
+
+For $\tilde{c}_2$, we generate another independent family of independent paths $${\bf X}_2=\{X^{'}_{m }(t); 0 \leqq t \leqq T,  m =1,2,\ldots ,M\},$$
+and we compute 
+\begin{multline*}
+\tilde{c}_2= \frac{1}{M} \sum_{m=1}^M \sum_{i=0}^{n-1} g(t_i, X'_m(t_i)) \{ \sum_{k:T_k\geqq t_{i+1}}F_{m,k}(X_m^{'(k)}(T_k))\}\\
+ \times 1_{\{\sum_{k:T_k\geqq t_{i+1}} (Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X^{'}_m(t_i)))) \geqq 0\}}(t_{i+1}-t_i).
+ \end{multline*}
+
+In the above computations of $\tilde{c}_1$ and $\tilde{c}_2$, we use the values of $X_{\ell}(t_i), t_i \in \Delta$, only.\\
+As for the computation of $\tilde{c}_2,$  we do not use $Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k}$ explicitly.
+We use $Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k}$ only to judge whether $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i))))>0$ or not. 
+ So the approximation has no error when the signs of  $(Q_{t,T,\varepsilon}^{(m,L,\omega)} F_{m,k})(\pi_k{X}(t)))$ and $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i)))$ are the same, even if there are large differences between them.
+
+\section{Structure of Vector Fields}\label{vec}
+Let ${\cal A}=\bigcup_{k = 1}^{\infty} \{ 0,1,\ldots , d \}^k$
+and ${\cal A}^{*}= {\cal A} \setminus \{ 0\} .$ 
+For $\alpha \in {\cal A}$, 
+Let $|\alpha | = k$ if 
+$\alpha $ $= (\alpha^1,\ldots ,\alpha^k)$
+$\in \{ 0,1,\ldots , d \}^k ,$ and 
+let $ \parallel \alpha \parallel $ 
+$ = |\alpha | + \mbox{card}\{ 1 \leqq i \leqq |\alpha | ; 
+\; \alpha^i = 0 \}.$ 
+Also, for each $m\geqq 1,$ ${\cal A}^{*}_{\leqq m}  
+=\{ \alpha \in {\cal A}^{*}; \; \parallel \alpha \parallel \leqq m \} .$
+
+We define vector fields $V_{[\alpha ]},$ $\alpha \in {\cal A},$ 
+inductively by
+$$
+\qquad V_{[i]} = V_i, 
+\quad i = 0,1,\ldots ,d,
 $$
 $$
-=\sum_{k=1}^K\sum_{i=i_{(k-1)}}^{{i_{k}}-1}(t_{i+1}-t_i) E^{\mu}[ \{\sum_{k'=k}^K(P_{T_k-t_i}^{(k')}F_k')(\pi_k' X(t,x))\}\vee0 ]
+V_{[\alpha *i]} = [V_{[\alpha ]},V_i], 
+\qquad i = 0,1,\ldots ,d.
+$$
+Here $\alpha *i$ 
+$= (\alpha^1,\ldots ,\alpha^k,i)$
+for $\alpha $ $= (\alpha^1,\ldots ,\alpha^k)$ and $i = 0,1,\ldots ,d.$
+
+We assume that a system of vector fields $\{ V_i ; i=0,1,\ldots ,d \}$ 
+satisfies the following condition (UFG).
+
+\noindent
+(UFG) There is an integer $\ell_0$ 
+and there are functions $\varphi_{\alpha,\beta} \in C^{\infty}_b({\bf R}^N),$ 
+$\alpha \in {\cal A}^{*},$ $\beta \in {\cal A}^{*}_{\leqq \ell_0},$ 
+satisfying the following.
+$$
+{\displaystyle V_{[\alpha ]} 
+= \sum_{\beta \in {\cal A}^{*}_{\leqq \ell_0}}
+\varphi_{\alpha,\beta}V_{[\beta ]}},
+\qquad 
+\alpha \in {\cal A}^{*}.
+$$
+
+\begin{prop}
+A system of vector fields $\{ \tilde{V}^{(m)}_{i}; i=0,1,\ldots , {d} \}$  
+also satisfies the $(UFG)$ condition.
+\end{prop}
+ {\it Proof.}
+We prove following by induction on $|\alpha|.$
+\begin{align} \label{inductive}
+{V}_{[\alpha ]} (f \circ \pi_m) = (\tilde{V}^{(m)}_{[\alpha ]}f)\circ \pi_m, \quad f \in C_b^{\infty}({\bf R}^{\tilde{N}_m}),
+ \end{align}
+ for any $\alpha\in \mathcal{A}$ and $m=1,\ldots,M.$ \\
+It is trivial in the case of $|\alpha|=1.$
+ By the assumption for induction,
+$$
+{V}_{[\alpha * i]} (f \circ \pi_m) =({V}_{[\alpha]} V_i- V_i {V}_{[\alpha]}) (f \circ \pi_m)
+$$
+$$
+={V}_{[\alpha]} ((\tilde{V}^{(m)}_{i} f)\circ \pi_m )- V_i ((\tilde{V}^{(m)}_{[\alpha]}f )  \circ \pi_m)
+$$
+$$
+=(\tilde{V}^{(m)}_{[\alpha]}(\tilde{V}^{(m)}_{i} f)) \circ \pi_m - (\tilde{V}^{(m)}_{i} (\tilde{V}^{(m)}_{[\alpha]}f ))  \circ \pi_m.
+$$
+So we have (\ref{inductive}).
+From (UFG) condition, we have
+$$ {V}_{[\alpha ]} (f \circ \pi_m)= 
+\sum_{ \beta \in {\cal A}^{*}_{\leqq \ell_0}} \varphi_{ \alpha, \beta } 
+{V}_{[\beta]} (f \circ \pi_m)$$
+$$=\sum_{ \beta \in {\cal A}^{*}_{\leqq \ell_0}} \varphi_{ \alpha, \beta } 
+(\tilde{V}_{[\beta]}^{(m)}f) \circ \pi_m.$$
+ Let $j_m: {\bf R}^{\tilde{N}_m} \to {\bf R}^{N} $ be
+ $$j_m(\tilde{x}_m) = (x_0,0\ldots , 0,x_m,0,\ldots,0).$$
+Then
+$$
+\tilde{V}^{(m)}_{[\alpha]}f=(V_{[\alpha]}^{(m)}f)\circ \pi_m \circ j_m
+$$
+$$
+=(\sum_{ \beta \in {\cal A}^{*}_{\leqq \ell_0}} \varphi_{ \alpha, \beta } 
+(\tilde{V}_{[\beta]}^{(m)}f) \circ \pi_m) \circ j_m
+=\sum_{ \beta \in {\cal A}^{*}_{\leqq \ell_0}} (\varphi_{ \alpha, \beta }\circ j_m)
+\tilde{V}_{[\beta]}^{(m)}f.
+$$
+So we have our assertion.
+\qed \\
+\\
+Let $A_m(\tilde{x}_m)= (A_m^{ij}(\tilde{x}_m))_{i,j=1,\ldots ,\tilde{N}_m},$ $t>0,$ $\tilde{x}_m\in {\bf R}^{\tilde{N}_m},$ 
+be a $\tilde{N}_m \times \tilde{N}_m$ symmetric matrix given by
+$$
+A_m^{ij}(\tilde{x}_m) 
+= \sum_{\alpha \in {\cal A}^{*}_{m, \leqq \ell_0}}
+\tilde{V}^i_{m,[\alpha ]}(\tilde{x}_m)\tilde{V}^j_{m,[\alpha ] }(\tilde{x}_m),
+\qquad i,j=1,\ldots , \tilde{N}_m.
+$$
+Let $h_m(\tilde{x}_m) = \det A_m(\tilde{x}_m), \tilde{x}_m \in {\bf R}^{ \tilde{N}_m}$ 
+and 
+\begin{align}
+E_m= \{ \tilde{x}_m \in {\bf R}^{\tilde{N}_m};\; h_m(\tilde{x}_m)>0\} . 
+\label{defE}
+\end{align}
+By \cite{KS2}, we see that if $\tilde{x}_m\in E_m,$ 
+the distribution law of $\tilde{X}^{(m)}(t,\tilde{x}_m)$ under $\mu$ has a smooth density function
+$p^{(m)}(t,\tilde{x}_m,\cdot ):{\bf R}^{\tilde{N}_m}\to [0,\infty )$ for $t>0.$
+Moreover, by \cite{KM} we see  that $\int_{E_m} p^{(m)}(t,\tilde{x}_m,\tilde{y}_m)dy =1,$ $\tilde{x}_m\in E_m.$ 
+We have $p_m(t,\tilde{x}_m,y)=0, y\in E_m^c$ by \cite{KM}.\\
+
+\section{Discretization error estimation}
+
+\subsection{Discretization}
+We define $c_{\Delta}, \Delta \in \Pi$ by
+$$c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)
+E^{\mu}[g(t_i,X(t_i,x^*))\{\sum_{m=1}^M\sum_{k; T_k \geqq t_{i+1}}^K(P_{T_k-t_i}^{(m)}F_{m,k})(\pi_mX(t_i,x^*))) \}\vee 0].
+$$
+When we set the index $i_{(k)}, k=1,\ldots, K,$ as $t_{i_{(k)}} = T_k,$
+we have the expression of $c_{\Delta}$ 
+$$
+c_{\Delta}=\sum_{k=1}^K\sum_{i=i_{(k-1)}}^{{i_{(k)}}-1}(t_{i+1}-t_i) E^{\mu}[ g(t_i,X(t_i,x^*))\{
+\sum_{m=1}^M \sum_{k'=k}^K(P_{T_k-t_i}^{(m)}F_{m, k'})(\pi_{m} X(t_i,x^*))\}\vee0 ].
  $$
-Let $\varphi$ be a smooth function that satisfies
+The difference between $c_0$ and $c_{\Delta}$ is estimated as follows.
+ \begin{prop}\label{time disc}
+There exists a constant $C >0$ such that
+$$
+|c_0-c_{\Delta}| \leqq  C |\Delta|,\quad \Delta \in \Pi.$$.
+\end{prop}
+{\it Proof.}
+Let $$\tilde{F}_{k}(x)=\sum_{m=1}^M \sum_{k'=k}^K (P_{T_{k'}-T_{k}}^{(m)}F_{m,k'})(\pi_m x), k=1,\ldots,K.$$ then  the error between $c_0$ and $c_{\Delta}$ is bounded above by
 \begin{align*}
+&|c_0- c_{\Delta}| \leqq   \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} dt\\
+& E^{\mu}\left[ \left |g(t,X(t,x^*)) (P_{T_{k}-t} \tilde{F}_{k})(X(t,x^*)) \vee 0
+-  g(t_i,X(t_i,x^*)) P_{T_{k}-t_i} \tilde{F}_{k} X(t_i,x^*)) \vee 0 \right| \right]
+\end{align*}
+
+\subsection{Prepareations from Malliavin Calculus}
+Let us denote $\|\nabla F\|_{\infty}=\sup_{x \in {\bf R}^N}|(\frac{\partial F}{\partial x_1}(x), \ldots, \frac{\partial F}{\partial x_N}(x))|, \quad F \in C^{\infty}({\bf R}^N).$
+\begin{prop}\label{discProp}
+Let $T>0$. Then there exists a $C>0$ such that 
+\begin{align*}
+&E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*)(P_{T-s}F)(X(s,x^*)) \vee 0|]\\
+&\leqq C \|\nabla F\|_{\infty} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,
+\end{align*}
+for any $ F \in C_b^{\infty}({\bf R}^{N})$ and any $0< s < t< T$. 
+\end{prop}
+
+we use the notation in \cite{K}.
+We have the following Lemma similarly to the proof of \cite{K} Lemma 8 (3).  
+\begin{lem} \label{rev}
+For any $\Phi \in {\bf D}_{\infty-}^1, \alpha \in \mathcal{A}^*_{\leqq \ell_0},$ let
+$$(D^{(\beta)} \Phi)(t,x)=(D \Phi(t,x), k^{\beta}(t,x))_H$$
+and
+\begin{align*}
+\Phi_{\alpha}(t,x)=&\sum_{\beta \in \mathcal{A}^*_{\leqq \ell_0}} t^{-\|\alpha\| / 2}\{ -D^{(\beta)} \Phi(t,x)M_{\alpha \beta}^{-1}(t,x) \\
+&-(\sum_{\gamma_1 \gamma_2 \in \mathcal{A}^*_{\leqq \ell_0}} \Phi(t,x) M_{\alpha \gamma_1}^{-1}(t,x)) D^{(\beta )}
+M^{\gamma_1 \gamma_2}(t,x) M_{\gamma_1 \beta}^{-1}(t,x) \\
+&+ \Phi(t,x) M_{\alpha \beta}^{-1}(t,x)) D^* k^{\beta}(t,x) \}, \quad t>0, x \in {\bf R}^{N}.
+\end{align*}
+Then 
+$$
+E^{\mu}[\Phi(t,x) (V_{[\alpha]}f )(X(t,x))] = t^{-\|\alpha\| / 2}E^{\mu}[\Phi_{\alpha}(t,x) f(X(t,x))],
+$$
+and
+$$\sup_{t\in[0,T], x \in {\bf R}^N, p\in (1, \infty)} E[|\Phi_{\alpha}(t,x)|^p] < \infty.$$
+\\
+\end{lem}
+
+Let $\varphi$ be a smooth function such that
+\begin{align}
 &\varphi(z)=
 \begin{cases}
 1 , z\geqq 1\\
 0, z<0,
 \end{cases}\\
 &\varphi' (z) \geqq 0.
-\end{align*}
+\end{align} 
 Let $\varphi_m(z)=\varphi(mz)$ and $\bar{\varphi}$ be 
-\begin{align*}
+\begin{align} \label{defPhi}
 \bar{\varphi}_m(z)=\int_{0}^z \varphi_m(z')dz'.
-\end{align*}
+\end{align}
 Then for any $z \in {\bf R},$
-$$\bar{\varphi}_m(z) \to z \vee 0 , \quad m\to \infty.$$
+$$\bar{\varphi}_m(z) \to z \vee 0 , \quad m\to \infty.$$ 
 
-Let $\mathcal{L}_0({\bf R}^N)$ be a class of functions such that 
-$f \in C^{\infty}({\bf R}^{\tilde{N}}),\|\frac{\partial^{\alpha}f}{\partial x^{\alpha}}\|_{\infty} <\infty$ for any $|\alpha| \geqq 1.$
-Let $\mathcal{L}_1({\bf R}^N)$ be a class of functions such as  linear combination of $f \vee g, f \wedge g$ etc.$f \in C^{\infty}({\bf R}^{\tilde{N}}),\|\frac{\partial^{\alpha}f}{\partial x^{\alpha}}\|_{\infty} <\infty$ for any $|\alpha| \geqq 1.$
-where $\alpha=(\alpha_1,\ldots, \alpha_{\tilde{N}_k})\in {\bf Z}^{\tilde{N}_k}$ is multi index and $|\alpha|=\alpha_1+\ldots+ \alpha_{\tilde{N}_k}$.
-Let $n, K \in {\bf N}, n> K$,  $\Delta_n: 0 = t_0 < t_1 < \cdots < t_n = T$ be time grids and 
-$\mathcal{T}_{ex} = \{T_k, k=1,\ldots,K\}$ be a times of Payoff.
-We set $|\Delta_n| = \max_{i=1,\ldots,n}(t_i-t_{i-1})$.We assume $\mathcal{T}_{ex} \subset \Delta_n$ and
-$T_{k-1}=t_{i_{(k-1)}} <t_{i_{(k-1)}+1}  < \ldots < t_{i_{(k-1)}} <t_{i_{k}}=T_k, k=1,\ldots, K.$
-
-\begin{lem}\label{discLem2}
-Let $T>0, F \in \mathcal{L}_0({\bf R}^N)$ and we set $\{\mathcal{F}_t\}_{t\geqq 0}$-martingale $\{M_t\}_{t\geqq 0}$
-as follows.
-$$M_t = E^{\mu}[F(X(T,x))|\mathcal{F}_t]$$ 
-$$=(P_{T-t}F)(X(t,x)).$$
-Then for any $0< s < t< T$, there exists a $C>0$ such that 
-$$|E[M_t \vee 0]-E[M_s \vee 0]|\leqq C \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr .$$
+\begin{lem}\label{rev2}
+If $\Phi \in {\bf D}_{\infty -}^1,$ then $|\Phi| \in {\bf D}_{\infty -}^1.$
 \end{lem}
 {\it Proof.}
+Let $\bar{\psi}_m(z) = \bar{\varphi}_m(z)+\bar{\varphi}_m(-z).$ Then for any $z \in {\bf R},$
+$$\bar{\psi}_m(z) \to |z|  , \quad m\to \infty,$$
+and $|\bar{\psi}'_m(z)| \leqq 1.$
+We have
+\begin{align*}
+&D(\bar{\psi}_m(\Phi(t,x))) = \bar{\psi}'_m(\Phi(t,x))D\Phi(t,x)\\
+=&(\varphi_m(\Phi(t,x))-\varphi_m(-\Phi(t,x)))D\Phi(t,x), \quad m\geqq 1.
+\end{align*}
+Then $\{D(\bar{\psi}_m(\Phi(t,x)))\}_{m=1}^{\infty}$ is a Cauchy sequence in $L^p(W_0,\mathcal{L}_{(2)}^1(H;{\bf R})), p>1,$
+because 
+\begin{align*}
+\|D(\bar{\psi}_m(\Phi(t,x))) - D(\bar{\psi}_n(\Phi(t,x))) \|_H \leqq 1_{\{|\Phi(t,x)|\in [0,1/m] \}}\|D\Phi(t,x)\|_H, \quad n\geqq m\geqq 1.
+\end{align*}
+Because $D: {\bf D}_p^1\to L^p(W_0,\mathcal{L}_{(2)}^1(H;{\bf R}))$ is a closed operator,
+we have $|\Phi(t,x)|\in {\bf D}_p^1,$ for any $p>1$. So we have the assertion.
+\qed
+\\
+
+{\it Proof of Propsition \ref{discProp}.}
+Let $\{M(t)\}_{0\leqq t \leqq T}$ be
+$$M(t) = E^{\mu}[F(X(T,x^*))|\mathcal{F}_t]=(P_{T-t}F)(X(t,x^*)).$$
+$\{M(t)\}_{0\leqq t \leqq T}$ is a $\{\mathcal{F}_t\}_{t\geqq 0}$-martingale.
+Let $Y(t)=g(t,X(t,x^*)), 0 \leqq t \leqq T.$
+
+Let 
+$$L_t = \frac{\partial}{\partial t} + V_0+\frac{1}{2}\sum_{i=1}^d V_i^2.$$
 By It\^o formula, 
-$$\bar{\varphi}_m(M_t)=\bar{\varphi}_m(M_s)+\int_s^t\varphi_m(M_r)dM_r+\frac{1}{2}\int_s^t\varphi'_m(M_r)d\langle M \rangle_r$$
-Now we set $$M_t=u(t,X(t,x)),$$ then
-$$dM_t=\sum_{j=1}^d V_j u(t,X(t,x))dB^j(t)$$
-$$d\langle M \rangle_t=\sum_{j=1}^d (V_j u(t,X(t,x)))^2dt.$$
+\begin{align*}
+Y(t)\bar{\varphi}_m(M(t))&=Y(s)\bar{\varphi}_m(M(s))+\int_s^t Y(r)\varphi_m(M(r))dM(r)\\
+&+\frac{1}{2}\int_s^t Y(r)\varphi_m'(M(r))d\langle M \rangle(r)\\
+&+\int_s^t \bar{\varphi}_m(M(r))dY(r)+\int_s^t d\langle Y, \bar{\varphi}_m(M) \rangle(r).
+\end{align*}
+Note that,
+$$M(t)=M(s) + \sum_{j=1}^d \int_s^t V_j (P_{T-r}F)(X(r,x^*))dB^j(r),$$
+$$\langle M \rangle(t)=\langle M \rangle(s) + \sum_{j=1}^d \int_s^t(V_j (P_{T-r}F)(X(r,x^*)))^2dr,$$
+$$Y(t)=Y(s) + \sum_{j=1}^d \int_s^t  (V_jg)(X(r,x^*)) dB^j(r) +\int_s^t (L_t g)(X(r,x^*))dr,$$
+and
+$$\langle Y, \bar{\varphi}_m(M) \rangle(t)=\langle Y, \bar{\varphi}_m(M) \rangle(s) + \sum_{j=1}^d \int_s^t (V_jg)(X(r,x^*))(V_j (P_{T-r}F))(X(r,x^*))dr.$$
 So we have
-$$E^{\mu}[\bar{\varphi}_m(M_t)]-E^{\mu}[\bar{\varphi}_m(M_s)]$$
-$$=\frac{1}{2}\sum_{j=1}^d \int_s^t E^{\mu}[\varphi'_m( u(r,X(r,x)) ) (V_j u(r,X(r,x)))^2] dr.$$
-
+$$E^{\mu}[|Y(t)\bar{\varphi}_m(M(t)) - Y(s)\bar{\varphi}_m(M(s))|]$$
+$$=\frac{1}{2}\sum_{j=1}^d \int_s^t E^{\mu}[|Y(r)\varphi_m'( (P_{T-r}F)(X(r,x^*)) ) \left(V_j (P_{T-r}F)(X(r,x^*))\right)^2|] dr$$
+$$+\int_s^t E^{\mu}[|\bar{\varphi}_m(M(r)) (L_t g)(X(r,x^*))|]dr+ \sum_{j=1}^d \int_s^t E^{\mu}[|(V_jg)(V_j (P_{T-r}F))(X(r,x^*))|]dr.$$
+Now by the definition of $\varphi_m$ and $g$,  we have,
+$$\int_s^t E^{\mu}[|\bar{\varphi}_m(M(r)) (L_t g)(X(r,x^*))|]dr \leqq \int_s^t  E^{\mu}[|M(r)|^2]^{1/2}E^{\mu}[|(L_t g)(X(r,x^*))|^2]^{1/2}dr$$
+$$ \leqq \sup_{t\in[0,T]}E^{\mu}[|(L_t g)(X(r,x^*))|^2]^{1/2} \int_s^t  E^{\mu}[|M(r)|^2]^{1/2}dr.$$
+By Burkholder's inequality,
+$$\int_s^t  E^{\mu}[|M(r)|^2]^{1/2}dr \leqq E^{\mu}[\langle M \rangle_t]^{1/2} (t-s)
+ \leqq \sup_{r\in (s,t)} \|V_j (P_{T-r}F)\|_{\infty}(t-s).$$
+ On the other hand, we have,
+$$\sum_{j=1}^d \int_s^t E^{\mu}[|(V_jg)(X(r,x^*))(V_j (P_{T-r}F))(X(r,x^*))|]dr$$
+$$ \leqq \|V_j (P_{T-r}F)\|_{\infty} \sum_{j=1}^d \int_s^t E^{\mu}[|(V_jg)(X(r,x^*))|]dr$$
+$$\leqq \sum_{j=1}^d \sup_{r\in (s,t)} \|V_j (P_{T-r}F)\|_{\infty} (t-s),$$
+for any $ F \in C_b^{\infty}({\bf R}^{N})$ and any $0< s < t< T$.\\ 
 On the other hand
-$$ E^{\mu}[\varphi'_m( u(r,X(r,x)) ) (V_j u(r,X(r,x)))^2]$$
-$$=E^{\mu}[V_j \varphi_m( u(r,X(r,x)) ) V_j u(r,X(r,x)] $$
-$$=E^{\mu}[V_j\left( \varphi_m( u(r,\cdot) V_j u(r,\cdot)\right)(X(r,x))) - 
-\varphi_m( u(r,X(r,x)) V_j^2 u(r,X(r,x)))] $$
-$$=P_r  V_j  \varphi_m \left( ( P_{T-r}F)(\cdot) V_j P_{T-r}F (\cdot) \right)(x)- 
-P_r \left ( \varphi_m \left( ( P_{T-r} F) (\cdot)\right)  V_j^2 (P_{T-r} F)(\cdot) \right)(x)$$
-By Propostion \ref{rev}, there exists a $C_1 >0$ such that
-$$\|P_r  V_j  \varphi_m \left( ( P_{T-r}F)(\cdot) V_j P_{T-r}F (\cdot) \right)\|_{\infty}) \leqq C_1(r^{-1/2}+(T-r)^{-1/2})$$
-And with respect to another term, 
-$$V_j^2 (P_{T-r} F)(x)=V_j \sum_{i=1}^N v_j^i(x) \frac{\partial}{\partial x_i}E[F(X(T-r,x))]$$
-$$=V_j \sum_{i=1}^N v_j^i(x) E[\sum_{k=1}^N \frac{\partial F}{\partial x_k}(X(T-r,x)) \frac{\partial X^k(T-r,x)}{\partial x_i}]$$
-$$=V_j \sum_{i=1}^N v_j^i(x) \sum_{k=1}^N T_{J_k^i} (T-r)\frac{\partial F}{\partial x_k} (x) .$$
-Because $\|\frac{\partial F}{\partial x_k}\|_{\infty} < \infty, k=1,\cdots,N$ and $v_j^i \in C_0^{\infty},$ by Proposition \ref{rev},
-there exists a $C_2 >0$ such that
-$$ \|P_r \left ( \varphi_m \left( ( P_{T-r} F) (\cdot)\right)  V_j^2 (P_{T-r} F)(\cdot) \right)\|_{\infty} \leqq C_2 (T-r)^{1/2}.$$
+$$ \varphi_m' \left( (P_{T-r}F)(x^*) \right) \left(V_j (P_{T-r}F)(x^*)\right)^2$$
+$$=\left(V_j (\varphi_m \circ (P_{T-r}F))\right) (x^*) \left(V_j (P_{T-r}F)\right)(x^*) $$
+$$= V_j \left( \varphi_m \circ ( P_{T-r}F)(x^*)  V_j (P_{T-r}F)(x^*) \right) 
+-  \varphi_m \circ (P_{T-r}F)(x^*)  V_j^2(P_{T-r}F) (x^*) . $$
+Notice that  $\varphi_m' \geqq 0,$ we have
+$$ E^{\mu}[|Y(r)\varphi_m' \left( (P_{T-r}F)(X(r,x^*)) \right) \left(V_j (P_{T-r}F)(X(r,x^*))\right)^2|]$$
+$$= E^{\mu}[|Y(r)| \varphi_m' \left( (P_{T-r}F)(X(r,x^*)) \right) \left(V_j (P_{T-r}F)(X(r,x^*))\right)^2]$$
+$$=  I_{1,j}(r,f)-I_{2,j}(r,f),$$
+where
+$$I_{1,j}( r,F) =E^{\mu} [ |g(r, X(r,x^*))| V_j \left( \varphi_m \circ ( P_{T-r}F)  V_j (P_{T-r}F) \right) (X(r,x^*))], $$
+$$I_{2,j}( r,F) = E^{\mu} [  |g(r, X(r,x^*))|  \varphi_m \circ (P_{T-r}F)(X(r,x^*)) V_j^2(P_{T-r}F) (X(r,x^*))]. $$
+Let $\Phi_{g}(r,x)=|g(r,X(r,x^*))|.$ Then by Lemma \ref{rev2}, $\Phi_{g} \in {\bf D}_p^1.$ Let $\Phi_{g,i}(r,x), i = 1, \ldots, N$ be defined by the formula of Lemma \ref{rev}.
+Then we have
+$$I_{1,j}( r,F) = r^{-1/2} E^{\mu} [ \Phi_{g,j}(r,x) \varphi_m \circ ( P_{T-r}F)(X(r,x^*))  V_j (P_{T-r}F) (X(r,x^*))],$$
+and 
+$$
+\sup_{t \in[0,T], x\in {\bf R}^N} E^{\mu}[|\Phi_{g,i}(t,x)|^p] < \infty.
+$$ 
+Then there exists a constant $C>0$ such that
+$$|I_{1,j}( r,F)| \leqq C r^{-1/2} \|V_j (P_{T-r}F) \|_{\infty}.$$
+Also we have
+$$|I_{2,j}( r,F)| \leqq  CE^{\mu}[|g(r, X(r,x^*))|]\|V_j^2 (P_{T-r}F)\|_{\infty},$$
+for any $ F \in C_b^{\infty}({\bf R}^{N})$ and any $0< r< T$.\\ 
+\\Let vector field $V_j$ be represented by   
+$ V_j = \sum_{i=1}^N v_j^i(x) \frac{\partial}{\partial x_i}.$
+Then we have $$V_j (P_{T-r} F)(x)= \sum_{i=1}^N\sum_{k=1}^N v_j^i(x) (T_{\Phi_{k,i}}(T-r)\frac{\partial F}{\partial x_i})(x),$$
+where $\Phi_{k,i}(t,x)=\frac{\partial X^{k}(t,x)}{\partial x_i}$ and 
+$$(T_{\Phi_{k,i}}(t)F)(x) = E^{\mu}[\Phi_{k,i}(t,x) F(X(t,x))]. $$
+Moreover, we have  
+$$V_j^2 (P_{T-r} F)(x)= \sum_{i=1}^N\sum_{k=1}^N ( V_j v_j^i(x)  (T_{\Phi_{k,i}}(T-r)\frac{\partial F}{\partial x_i})(x)
++ v_j^i(x)  (V_j T_{\Phi_{k,i}}(T-r)\frac{\partial F}{\partial x_i})(x)).$$
+Then by Corollary 9 of \cite{K}, since $\Phi_{k,i} \in {\cal K}_0$ and there is a constant $C>0$ such that
+$$\|V_j (P_{T-r} F) \|_{\infty} \leqq C\|\nabla F\|_{\infty},$$
+and
+$$\|V_j^2 (P_{T-r} F)  \|_{\infty} \leqq C(T-r)^{-1/2}\|\nabla F\|_{\infty},$$
+for any $ F \in C_b^{\infty}({\bf R}^{N}), j = 1,\ldots,d,$ and any $0< r< T$.\\ 
+\\
+So we have
+$$E[|g(t,X(t,x^*))\bar{\varphi}_m((P_{T-t}F)(X(t,x)) ) - g(s,X(s,x^*))\bar{\varphi}_m((P_{T-s}F)(X(s,x)))|] $$
+$$\leqq C \|\nabla F\|_{\infty} \int_s^t (r^{-1/2} + (T-r)^{-1/2})dr.$$
+Letting $m \to \infty,$ we have our assertion.
+ \qed
+ 
+\begin{cor}
+Let $T>0$. There exists a constant $C >0$ such that
+$$E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*))(P_{T-s}F)(X(s,x^*)) \vee 0|]$$
+$$\leqq C \|F\|_{{Lip}} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,$$
+for any $ F \in Lip({\bf R}^{N})$ and any $0< s < t< T$.
+\end{cor}
+{\it Proof.}
+For $F \in Lip({\bf R}^N)$, there exists $F_m \in C_b^{\infty}({\bf R}^N), m=1, 2, \cdots, $ such that
+$\| \nabla F_m\| \leqq \|F\|_{Lip}$ and $F_m(x) \to F(x)$, for any $x \in {\bf R}^N$.
+So we obtain the result from Lemma \ref{discProp}.
+\qed
+\\
+\begin{lem}\label{discLem1}
+Let $m=1,\ldots,M,$ and $T>0.$ There exists a constant $C >0$ such that
+\begin{align}
+&E^{\mu}[ |g(t,X(t,x^*))(P^{(m)}_{T-t}h)(\tilde{X}^{(m)}(t,\tilde{x}_m^*))-h(\tilde{X}^{(m)}(t,\tilde{x}_m^*))|]\nonumber \\ 
+\leqq &C(\|\nabla h\|_{\infty}+ \|\nabla^2 h\|_{\infty} )(T-t),\label{disc1}\\
+\text{and} \nonumber\\
+&E^{\mu}[ |g(t,X(t,x))(P^{(m)}_{T-t}(h\vee 0))(\tilde{X}^{(m)}(t,\tilde{x}_m^*))-(h\vee 0)(\tilde{X}^{(m)}(t,\tilde{x}_m^*))|] \nonumber \\
+\leqq &C(\|\nabla h\|_{\infty}+ \|\nabla^2 h\|_{\infty} )(T-t) \label{disc2}.
+\end{align}
+for  any $h \in C_b^{\infty}({\bf R}^{\tilde{N}_m}), t \in [0, T).$
+\end{lem}
+{\it Proof.}
+(\ref{disc1}) follows from It\^o's formula. So we show (\ref{disc2}).\\
+Let $\bar{\varphi}_k, k=1,\ldots,$ are as defined in (\ref{defPhi}). Let
+$$\tilde{L}_m=\tilde{V}^{(m)}_{0}+\frac{1}{2}\sum_{i=1}^{d}(\tilde{V}^{(m)}_{i})^2.$$
+By It\^o's formula
+$$\bar{\varphi}_k(h(\tilde{X}^{(m)}(T,\tilde{x}_m^*))-\bar{\varphi}_k(h(\tilde{X}^{(m)}(t,\tilde{x}_m^*))$$
+$$=\int_t^T \varphi_k(h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) (\tilde{V}^{(m)}_{i}h)(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) dB^{m,i}(s)$$
+$$+\int_t^T \varphi_k(h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) (\tilde{L}_m h)(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) ds$$
+$$+\frac{1}{2} \int_t^T \varphi_k' (h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) \sum_{i=1}^{\tilde{d}_m} ((\tilde{V}^{(m)}_{i} h)(\tilde{X}^{(m)}(s,\tilde{x}_m^*)))^2 ds$$
 
-So we can take a $C>0$ which is independent of $m$ and we have
-$$E^{\mu}[\bar{\varphi}_m(M_t)]-E^{\mu}[\bar{\varphi}_m(M_s)]$$
-$$\leqq C\int_{s}^t (r^{-1/2}+(T-r)^{-1/2})dr.$$
+So we have
+$$E^{\mu}[\bar{\varphi}_k(h(\tilde{X}^{(m)}(T,\tilde{x}_m^*))|\tilde{\mathcal{F}}^{(m)}_t]-\bar{\varphi}_k(h(\tilde{X}^{(m)}(t,\tilde{x}_m^*))$$
+$$=\int_t^T E^{\mu}[\varphi_k(h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) (\tilde{L}_m h)(\tilde{X}^{(m)}(s,\tilde{x}_m^*))|\tilde{\mathcal{F}}^{(m)}_t] ds$$
+$$+\frac{1}{2} \sum_{i=1}^{\tilde{d}_m}  \int_t^T E[\varphi_k' (h(\tilde{X}^{(m)}(s,\tilde{x}_m^*))) ((\tilde{V}^{(m)}_{i} h)(\tilde{X}^{(m)}(s,\tilde{x}_m^*)))^2 |\tilde{\mathcal{F}}^{(m)}_t] ds$$
+Notice that $\varphi_k' \geqq 0, $ then we have
+$$E[|g(t,X(t,x^*))E^{\mu}[\bar{\varphi}_k(h(\tilde{X}^{(m)}(T,\tilde{x}_m^*))|\tilde{\mathcal{F}}^{(m)}_t]-\bar{\varphi}_k(h(\tilde{X}^{(m)}(t,\tilde{x}_m^*))|]$$
+$$\leqq E[|g(t,X(t,x^*))|]\|\tilde{L}_m h\|_{\infty}(T-t)$$
+$$+\frac{1}{2} \sum_{i=1}^{\tilde{d}_m} \int_t^T E[|g(t,X(t,x^*))| \varphi_k' (h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) (\tilde{V}^{(m)}_{i} h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)))^2] ds.$$
+On the other hand, we have
+$$ \varphi_k' (h(\tilde{x}_m^*)) (\tilde{V}^{(m)}_{i} h(\tilde{x}_m^*))^2$$
+$$= \tilde{V}^{(m)}_{i} (\varphi_k \circ h)  (\tilde{x}_m^*) \left(\tilde{V}^{(m)}_{i} h\right)(\tilde{x}_m^*) $$
+$$= \tilde{V}^{(m)}_{i} \left( (\varphi_k \circ h) (\tilde{x}_m^*)  \tilde{V}^{(m)}_{i} h(\tilde{x}_m^*) \right) 
+-(\varphi_k \circ h) (\tilde{x}_m^*)  (\tilde{V}^{(m)}_{i})^2 h (\tilde{x}_m^*) . $$ 
+\\
+Let $\Phi_g(t,x) = |g(t,X(t,x^*))|$ and $\Phi_{g,i}(t,x), i = 1,\ldots,N$ be defined by the formula of Lemma \ref{rev}.
+Then it follows that
+$$ \|E^{\mu} [\Phi_g(t,x) \tilde{V}^{(m)}_{i} \left( (\varphi_k \circ h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)))) \tilde{V}^{(m)}_{i} h(\tilde{X}^{(m)}(s,\tilde{x}_m^*))) \right) ]\|_{\infty} $$
+$$\leqq Cs^{-1/2} E^{\mu}[|\Phi_{g,1}(t,x)|] \|(\varphi_k \circ h) \tilde{V}^{(m)}_{i} h \|_{\infty} \leqq C s^{-1/2} \| \tilde{V}^{(m)}_{i} h \|_{\infty},$$
+and
+$$ \| E^{\mu}[ \Phi_g(t,x) (\varphi_k \circ h) (\tilde{X}^{(m)}(s,\tilde{x}_m^*))  (\tilde{V}^{(m)}_{i})^2 h (\tilde{X}^{(m)}(s,\tilde{x}_m^*)) ] \|_{\infty} 
+\leqq C\| (\tilde{V}^{(m)}_{i})^2 h \|_{\infty}.$$
+So we have
+$$\frac{1}{2} \sum_{i=1}^{\tilde{d}_m} \int_t^T E[g(t,X(t,x))\varphi_k' (h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)) (\tilde{V}^{(m)}_{i} h(\tilde{X}^{(m)}(s,\tilde{x}_m^*)))^2] ds$$
+$$\leqq  \int_t^T C' (\|\nabla h\|_{\infty}+ \|\nabla^2 h\|_{\infty} )(1+s^{-1/2}) ds $$
+$$\leqq C' (\|\nabla h\|_{\infty}+ \|\nabla^2 h\|_{\infty} )(T-t) (1+(T^{1/2}+t^{1/2})^{-1}).$$
+Letting $k \to \infty,$ we have the assertion. \qed
+
+\begin{cor}
+Let $m=1,\ldots,M,T>0$ and $F \in \mathcal{M}({\bf R}^{\tilde{N}_m})$. There exists a constant $C>0$ such that
+\begin{align}
+&E^{\mu}[ |g(t,X(t,x^*))(P^{(m)}_{T-t}F)(\pi_m{X}(t,x^*))-F(\pi_m{X}(t,x^*))|] 
+\leqq C(T-t),
+\end{align}  
+for any $ t \in [0,T).$
+\end{cor}
+{\it Proof.}
+Notice that $\pi_m{X}(t,x)=\tilde{X}^{(m)}(t,\tilde{x}_m^*)$ and Lemma \ref{discLem1} is valid for $h \in \hat{\mathcal{D}}({\bf R}^{\tilde{N}_m})$.
+On the other hand, for $F\in \mathcal{M} ({\bf R}^{\tilde{N}_m}) $, 
+we have the expression that 
+$$F=\sum_{k=1}^{K_F} a_k (f_k\vee g_k) = \sum_{k=1}^{K_F} a_k\left( (f_k-g_k)\vee 0 +g_k\right),$$
+$a_k \in {\bf R}, f_k, g_k \in  \hat{\mathcal{D}}({\bf R}^{\tilde{N}_m}), k=1,\ldots, K_F.$
+So our assertion follows from Lemma \ref{discLem1}.
  \qed
 
-
-\begin{prop}\label{time disc}
-Let $F_k \in \mathcal{L}_1({\bf R}^{\tilde{N}_k}), k=1,\ldots,K$. there exists a $C >0$ such that
-\begin{align}
-&|\sum_{k'=1}^K\sum_{i=i_{k'-1}}^{{i_{k'}}-1}E^{\mu}[ \int_{t_i}^{t_{i+1}} \{\sum_{k=k'}^K(P_{T_k-t}^{(k)}F_k)(\pi_k X(t,x))\}\vee 0 dt] \nonumber\\
- -&\sum_{k'=1}^K\sum_{i=i_{k'-1}}^{{i_{k'}}-1}(t_{i+1}-t_i) E^{\mu}[ \{\sum_{k=k'}^K(P_{T_k-t_i}^{(k)}F_k)(\pi_k X(t,x))\}\vee0 ]|
- \leqq  C |\Delta|,
-\end{align}
-for any $0<s<t<T$.
-\end{prop}
-{\it Proof.}
-Let $$F(x)=\sum_{k=k'}^K (P_{T_k-T_k'}^{(k)}F_k)(\pi_k x)$$
-and $$\tilde{F_m}(x)=\psi_m * F_m$$ 
-By Lemma \ref{discLem2}, the last term is bounded above by 
-$$|E^{\mu}[ \int_{t_i}^{t_{i+1}} \{\sum_{k=k'}^K(P_{T_k-t}^{(k)}F_k)(\pi_k X(t,x))\}\vee 0 dt]-E^{\mu}[ \int_{t_i}^{t_{i+1}}  \{\sum_{k=k'}^K(P_{T_k-t_i}^{(k)}F_k)(\pi_k X(t_i,x))) \}\vee 0 dt]|$$
-$$ \leqq \int_{t_i}^{t_{i+1}}dt \int_{t_i}^t (r^{-1/2}+(T_k-r)^{-1/2})dr.$$
-So
-$$\sum_{k;T_k\geqq t_{i+1}}  \sum_{i=0}^{n-1}\int_{t_i}^{t_{i+1}}dr \int_{r}^{t_{i+1}} (r^{-1/2}+(T_k-r)^{-1/2})dt $$
-$$=\sum_{k;T_k\geqq t_{i+1}}  \sum_{i=0}^{n-1}\int_{t_i}^{t_{i+1}} (t_{i+1}-r) (r^{-1/2}+(T_k-r)^{-1/2})dr $$
-$$\leqq |\Delta_n|\sum_{k;T_k\geqq t_{i+1}} \int_{T_{k-1}}^{T_{k}}  (r^{-1/2}+(T_k-r)^{-1/2})dr \leqq  C|\Delta_n|.$$
-for some $C>0.$
-As a result we have the assertion.
+{\it Proof of Proposition \ref{time disc}.}
+Let $$\tilde{F}_{k}(x)=\sum_{m=1}^M \sum_{k'=k}^K (P_{T_{k'}-T_{k}}^{(m)}F_{m,k'})(\pi_m x), k=1,\ldots,K.$$ 
+Then by Lemma \ref{discLem2}, there is a constant $C>0$ such that\\
+\begin{align*}
+&|c_0- c_{\Delta}| \\
+ \leqq   &\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} |E^{\mu}[ g(t,X(t,x^*))\left( (P_{T_{k}-t} \tilde{F}_{k})(X(t,x^*)) \vee 0\right)] \\
+-& E^{\mu}[ g(t_i,X(t_i,x^*))(P_{T_{k}-t_i} \tilde{F}_{k})(X(t_i,x^*)) \vee 0]| dt\\
+\leqq   &C\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} dt \int_{t_i}^t (r^{-1/2}+(T_k-r)^{-1/2})dr\\
+\leqq &C|\Delta|  \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1}\int_{t_i}^{t_{i+1}} (r^{-1/2}+(T_k-r)^{-1/2})dr. 
+\end{align*}
+So we have
+$$
+|c_0- c_{\Delta}| 
+\leqq 
+C|\Delta| \sum_{k=1}^K \int_{T_{k-1}}^{T_k} (r^{-1/2}+(T_k-r)^{-1/2})dr .
+$$
+So the assertion follows.
 \qed
 
 
 \section{Property of Stochastic Mesh Operator}
-To estimate Stochastic mesh operator, we use the following estimation of 
-transition kernel $p^{(k)}(t,\tilde{x}_k, x)$ obtained by Proposition 8 of  \cite{KM}.
-\begin{proposition}\label{heatKernel}
-Let $\delta_0^{(k)}$ be given by 
-$$\delta_0^{(k)}=(3\tilde{N}_k(\sup_{x\in {\bf R}^{\tilde{N}_k}} \sum_{i=1}^{\tilde{d}_k}|\tilde{V}_{k,i}(x)|^2))^{-1},$$
-then for any $T>0,$ there is a $C>0$ such that
-$$
-p^{(k)}(t,x,y)
-\leqq C t^{- (\tilde{N}_k+1) \ell_k /2} h_k(x)^{-2(\tilde{N}_k+1)\ell_k}\exp (- \frac{2\delta_0^{(k)}}{t}|y-x|^2 ), 
-\qquad  t \in (0,T], \ x,y \in E_k,
-$$
-and
-$$
-p^{(k)}(t,x,y)
-\leqq C t^{- (\tilde{N}_k+1) \ell_k /2} h_k(y)^{-2(\tilde{N}_k+1)\ell_k}\exp (- \frac{2\delta_0^{(k)}}{t}|y-x|^2 ), 
-\qquad  t \in (0,T], \ x,y \in E_k,
-$$
-for any $k=1,\ldots,K.$\\
-In particular, for any $T>0$ and $m\geqq 1,$ 
-there is a $C>0$ such that
-$$
-p^{(k)}(t,x,y)
-\leqq C t^{- (\tilde{N}_k+1) \ell_k /2} h_k(x)^{-2(\tilde{N}_k+1)\ell_k}(1+|x|^2)^m
-(1+|y|^2)^{-m}, 
-\qquad  t \in (0,T], \ x,y \in E_k,
-$$
-for any $k=1,\ldots,K.$
-\end{proposition}
+\subsection{Prepareations}
+We introduce basic properties and estimations about stochastic mesh operator
+discussed in \cite{KM}.
+We only explain each statement but we do not give the proof here.
+Refere to \cite{KM}, for the detailed proof of each statements.
 
-By Proposition 13 and 21 of \cite{KM}, we have the followings.
-\begin{proposition}\label{basic}
-Let $t>s\geqq 0,$ 
-and bounded measurable function $f:E_k\to {\bf R}.$
-Then we have 
+Let ${\cal F}_{t}^{(\infty)},$ $t\geqq 0,$  be 
+sub $\sigma$-algebra of ${\cal F}$ given by
 $$
-E^P[(Q_{s,t}^{(k,L,\omega)}f)(x)| {\cal F}_{s}^{(\infty )}] 
-= (P^{(k)}_{s,t}f)(x),
-\qquad \nu_s^{(k)}-a.e.x.
+{\cal F}_{t}^{(\infty )} 
+= \sigma \{ X_{\ell}(s); \; s\in [0,t], \ \ell =1,2,\ldots \} .
+$$
+We define $q_{s,t}^{(m,L,\omega)}(y)$ by
+$$
+q_{s,t}^{(m,L,\omega)}(y) = \frac{1}{L} \sum_{\ell = 1}^L p(t-s, X_{\ell}(s), y).
+$$
+Let $\nu^{(m)}_t(dx)=p^{(m)}(t, \tilde{x}^*_m, x)dx.$
+From  21 and Proposition 15 (1) of \cite{KM}, we have the followings.
+
+The most basic propery of Stochastic mesh operator is the correspondence of its 
+conditional expectation 
+with true conditonal expectation operator $P^{(m)}$.
+And the conditional variance of stochastic mesh operator is estimated by the ratio of 
+$q_{s,t}^{(m,L,\omega)}$ and $p^{(m)}(t-s)$.
+\begin{proposition}\label{basic}
+Let $t > 0, f\in L^2(E_m;d\nu_t^{(m)})$ and $t>s\geqq 0.$ Then we have
+$$
+E^P[(Q_{s,t}^{(m,L,\omega)}f)(x)| {\cal F}_{s}^{(\infty )}] 
+= (P^{(m)}_{s,t}f)(x),
+\qquad \nu_s^{(m)}-a.e.x \in E_m.
 $$
 and 
 $$
-E^P[ |(Q_{s,t}^{(k,L,\omega)}f)(x) - (P^{(k)}_{s,t}f)(x)|^2 | {\cal F}_s^{(\infty )}]
+E^P[ |(Q_{s,t}^{(m,L,\omega)}f)(x) - (P^{(m)}_{s,t}f)(x)|^2 | {\cal F}_s^{(\infty )}]
 \leqq 
 \frac{1}{L}
-\int_{E} \frac{p^{(k)}(t-s,x,y)^2 |f(y)|^2}{q_{s,t}^{(k,L,\omega)}(y)}\; dy .
+\int_{E_m} \frac{p^{(m)}(t-s,x,y)^2 |f(y)|^2}{q_{s,t}^{(m,L,\omega)}(y)}\; dy .
 $$
 \end{proposition}
+{\it Proof.}
+See  Proposition 13 of \cite{KM}.
+\qed \\
 
+As shown in the estimaion of Proposition \ref{basic}, we need the estimation of 
+transition kernel $p^{(m)}(t,\tilde{x}_m, x)$ to estimate the stochastic mesh operator.
+The following estimations are obtained from the property of  H{\" o}rmander type diffusion
+processes.
+\begin{proposition}\label{heatKernel}
+Let $\delta_0^{(m)}$ be given by 
+$$\delta_0^{(m)}=(3\tilde{N}_m(\sup_{x\in {\bf R}^{\tilde{N}_m}} \sum_{i=1}^{d}|\tilde{V}^{(m)}_{i}(x)|^2))^{-1},$$
+then for any $T>0,$ and $m=1,\ldots,M,$ there is a $C>0$ such that
+$$
+p^{(m)}(t,x,y)
+\leqq C t^{- (\tilde{N}_m+1) \ell_0 /2} h_m(x)^{-2(\tilde{N}_m+1)\ell_0}\exp (- \frac{2\delta_0^{(m)}}{t}|y-x|^2 ), 
+\qquad  t \in (0,T], \ x,y \in E_m,
+$$
+and
+$$
+p^{(m)}(t,x,y)
+\leqq C t^{- (\tilde{N}_m+1) \ell_0 /2} h_m(y)^{-2(\tilde{N}_m+1)\ell_0}\exp (- \frac{2\delta_0^{(m)}}{t}|y-x|^2 ), 
+\qquad  t \in (0,T], \ x,y \in E_m.
+$$
+In particular, for any $T>0, m=1,\ldots,M,$
+ and $q\geqq 1,$ 
+there is a $C>0$ such that
+$$
+p^{(m)}(t,x,y)
+\leqq C t^{- (\tilde{N}_m+1) \ell_0/2} h_m(x)^{-2(\tilde{N}_m+1)\ell_0}(1+|x|^2)^q
+(1+|y|^2)^{-q}, 
+\qquad  t \in (0,T], \ x,y \in E_m.
+$$
+\end{proposition}
+{\it Proof.}
+See  Proposition 8 of \cite{KM}.
+\qed \\
+
+
+We have the following estimation about simulation error using stochastic mesh operator.
+\begin{proposition}\label{key}
+Let $\delta \in (0,1)$ then there exists a $C > 0$ such that
+\begin{align*}
+&\left( \frac{1}{L}\sum_{\ell=1}^L E^P[ |(Q_{t,T_k,\varepsilon}^{(m)}f)(\pi_m (X_{\ell}(t))) - (P^{(m)}_{t,T_k}f)(\pi_m (X_{\ell}(t))|^2 ]\right)^{1/2} \\
+&\leqq 
+C  L^{-(1-\delta)/2}(T_k-t)^{-(1+\delta)(\tilde{N}+1)\ell_0/4} (\int_{E_m} f(y)^2 (1+|y|^2)^{-\tilde{N}_m}dy)^{1/2}.
+\end{align*}
+for any $\varepsilon >0$ any $m=1,\ldots,M,$  and any $f \in Lip({\bf R}^{\tilde{N}_m}).$
+\end{proposition}
+{\it Proof.}
+See  Proposition 15 of \cite{KM}.
+\qed \\
+
+According to Proposition \ref{basic}, we need the estimation of the ratio of 
+$q_{s,t}^{(m,L,\omega)}$ and $p^{(m)}(t-s)$ for the estimation of 
+$(Q_{s,t}^{(m,L,\omega)}f)$ as function.
+We have the following result.
 \begin{prop}\label{exSet}
-We set
+Let
 \begin{align*}
-Z_L^{(k)}(t;\delta)=\sup_{y\in {\bf R}^{N_k}} \frac{|q_{t,T_k}^{(k,L,\omega)}(y)- p^{(k)}(T_k, x_0, y)|}
-{(L^{-1/(1-\delta)}+p^{(k)}(T_k, x_0,y))^{(1-\delta)/2}},
+Z_L^{(m,k)}(t;\delta)=\sup_{y\in {\bf R}^{\tilde{N}_m}} \frac{|q_{t,T_k}^{(m,L,\omega)}(y)- p^{(m)}(T_k, \tilde{x}^*, y)|}
+{(L^{-1/(1-\delta)}+p^{(m)}(T_k, \tilde{x}^*,y))^{(1-\delta)/2}},
 \end{align*}
 \begin{align*}
-\tilde{Z}_L^{(k)}(t; \delta)=\sup_{s\in [0,t]} Z_L^{(k)}(s;\delta).
+\tilde{Z}_L^{(m,k)}(t; \delta)=\sup_{s\in [0,t]} Z_L^{(m,k)}(s;\delta).
 \end{align*}
-Then, we have followings.\\
-$(1)$ Let $\delta \in (0,1)$, then for any $p > 1$, there is a $C_{p,\delta} > 0$ such that
+Then we have the followings.\\
+$(1)$ For any $\delta \in (0,1)$, and $p>1$ , there is a $C_{p,\delta} > 0$ such that
 $$
-E^P[(L^{(1-\delta^2)/2}\tilde{Z}_L(T_k-\varepsilon; \delta))^p]^{1/p}\leqq C_{p,\delta}\varepsilon^{-5l_0}L^{-p\delta^2/2+1/p},
-\quad \varepsilon \in  (0,T].$$
-$(2)$ Let $\delta \in (0,1), t \in (0, T)$ and $\varepsilon \in (0,T).$  If $L^{(1-\delta^2)/2}\tilde{Z}_L(t; \delta) \leqq 1/4$, and  $p^{(k)}(T_k, x_0, y) \geqq L^{-(1-\delta)}$, then
+E^P[(L^{(1-\delta^2)/2}\tilde{Z}_L^{(m,k)}(T_k-\varepsilon; \delta))^p]^{1/p}\leqq C_{p,\delta}\varepsilon^{-5\ell_0}L^{-p\delta^2/2+1/p}$$
+for any $ \varepsilon \in  (0,T_k], k=1,\ldots,K,$  and  $L \geqq 1.$\\
+$(2)$ Let $\delta \in (0,1), t \in (0, T_k)$ and $\varepsilon \in (0,T).$  If $L^{(1-\delta^2)/2}\tilde{Z}_L^{(m,k)}(t; \delta) \leqq 1/4$, and  $p^{(m)}(T_k, x_0, y) \geqq L^{-(1-\delta)}$, then
 $$
-\frac{1}{2} \leqq \frac{q_{t,T_k}^{(k,L,\omega)}(y)}{p^{(k)}(T_k, x_0, y)} \leqq 2,  \quad t \in (0, T_k-\varepsilon].
-$$
+\frac{1}{2} \leqq \frac{q_{t,T_k}^{(m,L,\omega)}(y)}{p^{(m)}(T_k, \tilde{x}^*, y)} \leqq 2, $$
+for any $t \in (0, T_k-\varepsilon], \quad k=1,\ldots,K.$ and $L \geqq 1.$
 \end{prop}
 
-Now we prepare the following sets and functions.
+{\it Proof.}
+See  Proposition 21 of \cite{KM}.
+\qed \\
 
-Let $B^{(k)}(t, \delta)$, $\varphi_k(y)$ be 
+
+
+\subsection{Error estimation of Stochastic mesh operator}
+We estimate the error of stochastic mesh operator for each $t \in [0, T_k].$
+Now we introduce the following sets and functions.
+Let $B^{(m,k)}(t, \delta, L) \in \mathcal{F},$ $\varphi_{m,k,L}, m=1,\ldots,M, k=1, \ldots,K,$ be given by
 $$
-B^{(k)}(t, \delta) = \{\omega \in \Omega; L^{(1-\delta^2)/2}\tilde{Z}_L(t; \delta)
+B^{(m,k)}(t, \delta,L) = \{\omega \in \Omega; L^{(1-\delta^2)/2}\tilde{Z}_L^{(m,k)}(t; \delta)
 \leqq 1/4 \},
 $$
+and
 $$
-\varphi_k(y) = 1_{\{ y \in E_k; p^{(k)}(T_k, x_0, y) > L^{-(1-\delta)} \}},
+\varphi_{m,k,L}(y) = 1_{\{ y \in E_m; p^{(m)}(T_k, x_0, y) > L^{-(1-\delta)} \}}.
 $$
-and let the measurable functions $ d_{1,\varepsilon}^{(k)}(t,x) , d_{2,\varepsilon}^{(k)}(t,x)  : [0,T] \times E \times \Omega \to [0, \infty)$ be as follows.
-$$ d_{1,\varepsilon}^{(k)}(t,x) = |(Q_{t,T_k, \varepsilon}^{(k)}(1-\varphi_k)F_k)(x)
--(P_{T_k-t}^{(k)} (1-\varphi_k)F_k)(x) |,$$
-$$ d_{2,\varepsilon}^{(k)}(t,x) = 1_{B^{(k)}(T_k-\varepsilon, \delta)}|(Q_{t,T_k, \varepsilon}^{(k)}\varphi_kF_k)(x)
--(P_{T_k-t}^{(k)} \varphi_kF_k)(x) |,$$
-$\quad k = 1, \cdots, K.$
-
- We will estimate $d_{1,\varepsilon}^{(k)}$ and $d_{2,\varepsilon}^{(k)}$ in the next section.
-
-\section{Estimation of  $d_{1,\varepsilon}^{(k)}$ and $d_{2,\varepsilon}^{(k)}$}
-\begin{lem}\label{discLem1}
-Let $0 < t < T, F_k \in \mathcal{L}_1({\bf R}^{N_k})$. Then there exists $C>0$ such that
+Let $d_{i,\varepsilon,L}^{(m,k)}: [0,T] \times E \times \Omega \to [0, \infty), i=1,2,3,$ be the measurable functions given by
+\begin{align*}
+ d_{1,\varepsilon,L}^{(m,k)}(t,x)& = |(Q_{t,T_k, \varepsilon}^{(m,L,\omega)}(1-\varphi_{m,k,L})F_{m,k})(\pi_m(x))
+-(P_{T_k-t}^{(m)} (1-\varphi_{m,k,L})F_{m,k})(\pi_m(x)) |1_{[ 0, T_k- \varepsilon ) }(t),\\
+ d_{2,\varepsilon,L}^{(m,k)}(t,x) &= 1_{B^{(m,k)}(T_k-\varepsilon, \delta,L)}|(Q_{t,T_k, \varepsilon}^{(m,L,\omega)}\varphi_kF_{m,k})(\pi_m(x))
+-(P_{T_k-t}^{(m)} \varphi_{m,k,L}F_{m,k})(\pi_m(x)) |1_{[ 0, T_k- \varepsilon ) }(t),\\
+ d_{3,\varepsilon,L}^{(m,k)}(t,x) &= |(Q_{t,T_k, \varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_m(x))
+-(P_{T_k-t}^{(m)} F_{m,k})(\pi_m(x)) |1_{[T_k - \varepsilon , T_k) }(t)\\
+&= |F_{m,k}(\pi_m(X(T_k,x^*)))
+-(P_{T_k-t}^{(m)} F_{m,k})(\pi_m(x)) |1_{[T_k - \varepsilon , T_k) }(t), \quad k = 1, \cdots, K.
+\end{align*}
+ Let $p(t,x,dy)$ be the transition kernel of $X(t,x).$
+\begin{prop} \label{d12}
+Let $\delta \in (0,1)$. Then there exists a constant $C > 0$ such that 
 \begin{align}
-E^{\mu}[ |(P^{(k)}_{T-t}F_k)(\pi_k{X}(t,x))-F_k(\pi_k{X}(t,x))|] \leqq C(T-t), \quad k=1,\ldots,K.
+&\int_{E} E^P[ d_{1, \varepsilon,L}^{(m,k)}(t,x) ]|g(t,x)| p(t, x^*, dx)
+\leqq 
+ C L^{-(1-\delta)^3} 1_{[ 0, T_k- \varepsilon ) }(t), \label{d1} \\
+& (\int_{E_m} E^P[\ d_{2,\varepsilon,L}^{(m,k)}(t,x)^2] p(t, x^*, dx))^{1/2}\nonumber \\
+\leqq  
+&C L^{-(1-\delta)/2} (T_k-t)^{-(1+\delta)(\tilde{N}+1)\ell_0/4} 1_{[ 0, T_k- \varepsilon ) }(t),\label{d2}\\
+\text{and} \nonumber\\
+&  \int_{E_m}  d_{3,\varepsilon,L}^{(m,k)}(t,x) |g(t,x)| p(t, x^*, dx) 
+\leqq C (T_k-t)1_{[T_k - \varepsilon , T_k) }(t). \label{d3}
 \end{align}
+for any $\varepsilon \in (0,\varepsilon_0), t \in (0, T_k], L \geqq 1,$ $m=1,\ldots,M,$ and $k=1,\ldots,K.$
+\end{prop}
+{\it Proof.}
+Equation (\ref{d3}) follows from Lemma \ref{discLem1}. 
+So we will show  (\ref{d1}) and (\ref{d2}). Note that if $t \geqq T_k - \varepsilon$, 
+both sides are $0$ in (\ref{d1}) and (\ref{d2}) . So we will consider the case $t < T_k - \varepsilon$.
+By Proposition \ref{basic}, we have
+\begin{align*}
+&\int_{E} E^P[d_{1,\varepsilon,L}^{(m,k)}(t,\pi_m(x))] |g(t,x)| p(t, x^*, dx)\\
+= &\int_{E} E^P[|(Q_{t,T_k, \varepsilon}^{(m)}(1-\varphi_{m,k,L})F_{m,k})(x)
+-(P_{T_k-t}^{(m)} (1-\varphi_{m,k,L})F_{m,k})(\pi_m(x)) |] |g(t,x)| p(t, x^*, dx) \\
+\leqq &\int_{E} (E^P[(Q_{t,T_k, \varepsilon}^{(m)} |(1-\varphi_{m,k,L})F_{m,k}| )(\pi_m(x))]\\
+& \qquad \qquad \qquad \qquad \qquad \qquad+ (P_{T_k-t}^{(m)} |(1-\varphi_{m,k,L})F_{m,k}| )(\pi_m(x))) |g(t,x)| p(t, x^*, dx)\\
+\leqq &2 \int_{E} (P_{T_k-t}^{(m)} (1-\varphi_{m,k,L})|F_{m,k}|)(\pi_m(x)) g(t,x) p(t, x^*, dx).
+\end{align*}
+Using H\"{o}lder's inequality for $p=\frac{1}{\delta}, q = \frac{1}{1-\delta},$
+$$\int_{E} (P_{T_k-t}^{(m)} (1-\varphi_{m,k,L})|F_{m,k}|)(\pi_m(x)) |g(t,x)| p(t, x^*, dx)$$
+$$\leqq  \{\int_{E} (P_{T_k-t}^{(m)} (1-\varphi_{m,k,L})|F_{m,k}|)(\pi_m(x))^{1/(1-\delta)} p(t, x^*, dx)\}^{1-\delta}$$
+$$\times \{\int_E |g(t,x)|^{1/\delta}p(t, x^*, dx)\}^{\delta}$$
+$$\leqq  \{\int_{E_m}  (1-\varphi_{m,k,L}(\tilde{y}_m))^{1/(1-\delta)}|F_{m,k}(\tilde{y}_m)|^{1/(1-\delta)} p^{(m)}(T_k, \pi_m(x^*), \tilde{y}_m)d\tilde{y}_m\}^{1-\delta}$$
+$$\times \{\int_E |g(t,x)|^{1/\delta}p(t, x^*, dx)\}^{\delta}$$
+$$\leqq  L^{-(1-\delta)^3}\{  \int_{E_m} |F_{m,k}(\pi_m(y))|^{1/(1-\delta)} p^{(m)}(T_k, \pi_m(x^*),\tilde{y}_m)^{\delta}d\tilde{y}_m \}^{1-\delta}$$
+$$\times \{\int_E |g(t,x)|^{1/\delta}p(t, x^*, dx)\}^{\delta}.$$
+We used $(1-\varphi_{m,k,L}(\tilde{y}_m))^{1/(1-\delta)} p^{(m)}(T_k, \pi_m(x^*), \tilde{y}_m)^{(1-\delta)} \leqq L^{-(1-\delta)^2}$ in the last inequality.
+So we have Equation (\ref{d1}).\\
+Next we will show Equation (\ref{d2}) . 
+Noting that from
+$B^{(m,k)}(T_k-\varepsilon, \delta,L) \subset B^{(m,k)}(t, \delta,L), t \in [0,T_k-\varepsilon), k=1,\ldots,K,$ and $L \geqq 1$,
+$$d_{2,\varepsilon,L}^{(m,k)}(t,x) 
+\leqq 1_{B^{(m,k)}(t, \delta,L)}|(Q_{t,T_k, \varepsilon}^{(m)}\varphi_{m,k,L}F_{m,k})(\pi_m(x))
+-(P_{T_k-t}^{(m)} \varphi_{m,k,L}F_{m,k})(\pi_m(x))|.$$ 
+Since Propsition \ref{exSet},  
+$ 1_{B^{(m,k)}(t, \delta,L)} q_{t,T_k}^{(m,L,\omega)}(\tilde{y}_m)^{-1} \leqq 2 p^{(m)}(T_k, \pi_m(x^*),\tilde{y}_m)^{-1}$. And
+by Proposition \ref{basic}, 
+we have
+\begin{align*}
+&1_{B^{(m,k)}(t, \delta,L)}E^P[ |(Q_{t,T_k, \varepsilon}^{(m)}\varphi_{m,k,L}F_{m,k})(\tilde{x}_m)
+-(P_{T_k-t}^{(m)} \varphi_{m,k,L}F_{m,k})(\tilde{x}_m) |^2| \mathcal{F}_t]\\
+\leqq &1_{B^{(m,k)}(t, \delta,L)} \frac{1}{L} \int_{E_m} \frac{|\varphi_{m,k,L}F_{m,k}(\tilde{y}_m)|^2p^{(m)}(T_k-t, \tilde{x}_m,\tilde{y}_m)^2}{q_{t,T_k}^{(m,L,\omega)}(\tilde{y}_m)}d\tilde{y}_m\\
+\leqq &\frac{2}{L} \int_{E_m} \frac{|\varphi_{m,k,L}F_{m,k}(\tilde{y}_m)|^2}{p^{(m)}(T_k, \pi_m(x^*),\tilde{y}_m)} p^{(m)}(T_k-t, \tilde{x}_m,\tilde{y}_m)^2 dy.
+\end{align*}
+Then we have
+\begin{align*}
+&(\int_{E} E^P[\ d_{2,\varepsilon,L}^{(m,k)}(t,x)^2] p(t, x^*, dx))^{1/2} \\
+\leqq &(\int_{E}  E^P[1_{B^{(m,k)}(t, \delta,L)}E^P[ |(Q_{t,T_k, \varepsilon}^{(m)}\varphi_{m,k,L}F_{m,k})(x)
+-(P_{T_k-t}^{(m)} \varphi_{m,k,L}F_{m,k})(x) |^2| \mathcal{F}_t] ]p(t, x^*, dx))^{1/2}\\
+\leqq &(\frac{2}{L} \int_{E_m} \frac{|\varphi_{m,k,L}F_{m,k}(y)|^2}{p^{(m)}(T_k, \pi_m(x^*),\tilde{y}_m)} 
+(\int_{E} p^{(m)}(T_k-t, \tilde{x}_m,\tilde{y}_m)^{(1-\delta)+(1+\delta)} p(t, x^*, dx))d\tilde{y}_m)^{1/2}\\
+\leqq &(\frac{2}{L} \int_{E_m} \frac{|\varphi_{m,k,L}F_{m,k}(y)|^2}{p^{(m)}(T_k, \pi_m(x^*),\tilde{y}_m)^{\delta}} 
+(\int_{E_m} p^{(m)}(t, \pi_m(x^*), \tilde{x}_m) p^{(m)}(T_k-t, \tilde{x}_m,\tilde{y}_m)^{(1+\delta)/\delta}d\tilde{x}_m)^{\delta}d\tilde{y}_m)^{1/2}.
+\end{align*}
+Let $q \geqq \tilde{N}.$ From Lemma \ref{heatKernel}, there exists a constant $C>0$ such that 
+$$p^{(m)}(T_k-t, \tilde{x}_m,\tilde{y}_m) \leqq C(T_k-t)^{-(\tilde{N}_m+1)\ell_0/2}h_m(\tilde{x}_m)^{-(\tilde{N}_m+1)\ell_0}(1+|\tilde{x}_m|^2)^q(1+|\tilde{y}_m|^2)^{-q}.$$
+We set $C_1$ as
+\begin{align*}
+C_1=&\sup_{t\in[0,T]}\max_{\substack{m=1,\ldots,M,\\ k=1,\ldots,K}}(\int_{E_m} h_m(x)^{-(\tilde{N}_m+1)\ell_0(1+\delta)/\delta}(1+|x|^2)^{q(1+\delta)/\delta}p^{(m)}(t, \tilde{x}_m^*,x)dx)^{\delta/2}\\
+&\quad \quad \times (\int_E|g(t,x)|dx)^{1/2}.
+\end{align*}
+$C_1$ is bounded by Proposition 3 of \cite{KM}.
+Then since $\varphi_{m,k,L}(y)p^{(m)}(T_k, \tilde{x}_m^*,y)^{-\delta} \leqq L^{\delta}$,  we have
+\begin{align*}
+&\int_{E} E^P[\ d_{2,\varepsilon,L}^{(m,k)}(t,x)^2]^{1/2}|g(t,x)| p(t, x^*, dx)\\
+\leqq &\frac{C_1}{L} \int_{E_m} p^{(m)}(T_k, \tilde{x}_m^*,\tilde{y}_m)^{-\delta} |\varphi_{m,k,L}F_{m,k}(\tilde{y}_m)|^2(1+|\tilde{y}_m|^2)^{-q(1+\delta)}d\tilde{y}_m 
+(T_k-t)^{-(1+\delta)(N+1)\ell_0/2} ,\\
+\leqq &C_1L^{-(1-\delta)}(T_k-t)^{-(1+\delta)(\tilde{N}_m+1)l_0/2} 
+\int_{E_m} |F_{m,k}(\tilde{y}_m)|^2(1+|\tilde{y}_m|^2)^{-q(1+\delta)}d\tilde{y}_m .
+\end{align*}
+Since $q \geqq \tilde{N},$ and $F_{m,k}$ is Lipschitz continuous,
+$$\int_{{\bf R}^{\tilde{N}_m}} |F_{m,k}(\tilde{y}_m)|^2(1+|\tilde{y}_m|^2)^{-q(1+\delta)}d\tilde{y}_m < \infty.$$
+So we have the assertion.
+\qed
+\\
+Let $a,b,\alpha,\beta \geqq 0,$ and $a_i,b_i,\alpha_i,\beta_i \geqq 0, i=1,2.$
+Let $\phi^{(k)}(t,\varepsilon; a, \alpha, b, \beta)$ and $\hat{e}(\varepsilon, \gamma), t \in [0, T_k)$ be
+\begin{align*}
+&\phi^{(k)}(t,\varepsilon; a, \alpha, b, \beta) = a(T_k-t)^{-\alpha} 1_{[0, T_k - \varepsilon ) }(t)
++b(T_k-t)^{\beta}1_{[T_k - \varepsilon , T_k) }(t),\\
+&\hat{e}(\varepsilon, \gamma)
+=
+\begin{cases}
+ \varepsilon^{-(\gamma-1)} )&, \gamma >1, \\
+ \log \varepsilon &, \gamma = 1, \\
+ 1&, 0\leqq \gamma < 1.\\
+\end{cases}
+\end{align*}
+
+\begin{prop}\label{dd} 
+There exists a constant $C > 0$ such that
+\begin{align} \label{sum1}
+ \sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \phi^{(k)}(t_i, \varepsilon; a, \alpha, b, \beta)
+\leqq C (a\hat{e}(\varepsilon,\alpha ) + b \varepsilon^{\beta+1}),
+\end{align}
+and,
+\begin{align} \label{sum2}
+ &\sum_{i=0}^{n-1} (t_{i+1}-t_i) (\sum_{k_1; T_{k_1} \geqq t_{i+1}}  \phi^{(k)}(t_i, \varepsilon; a_1, \alpha_1, b_1, \beta_1)) 
+ (\sum_{k_1; T_{k_1} \geqq t_{i+1}} \phi^{(k)}(t_i, \varepsilon; a_2, \alpha_2, b_2, \beta_2)) \nonumber \\
+\leqq &C \left( a_1 a_2 \hat{e}(\varepsilon,\alpha_1+\alpha_2 ) +
+a_1 b_2 \varepsilon^{\beta2+1} 
++a_2 b_1 \varepsilon^{\beta_1+1} 
++ b_1 b_2 \varepsilon^{\beta_1+ \beta2+1} \right)
+\end{align}
+for any $\varepsilon >0$.
+\end{prop}
+
+\noindent {\it Proof.}
+Let us take $i_{(k)}$ as $t_{i_{(k)}}=T_k, k=1,\ldots,K.$
+If $t_i \in [T_{k-1}, T_k]$ and $k'>k$ then $ T_{k'}- t_i > \varepsilon .$
+So notice that
+\begin{equation}\label{discEps}
+1_{[T_{k'}-\varepsilon , T_{k'})}(t_i) =0,\quad  \text{for} \ i_{(k-1)} \leqq i \leqq i_{(k)}-1, k' >k.
+\end{equation}
+So we have
+\begin{align*}
+&\sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \phi^{(k)}(t_i, \varepsilon; a, \alpha, b, \beta)
+= \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} (t_{i+1}-t_i) \sum_{k'=k}^K \phi^{(k')}(t_i, \varepsilon; a, \alpha, b, \beta ) \\
+=&\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} (t_{i+1}-t_i) 
+\sum_{k'=k}^K  \left( a(T_{k'}-t_i)^{-\alpha} 1_{[0, T_k - \varepsilon ) }(t_i)
++b (T_{k'}-t_i)^{\beta}1_{[T_{k'} - \varepsilon , T_{k'}) }(t_i) \right)\\
+\leqq &\sum_{k=1}^K  \left( \sum_{k'=k}^K \int_{T_{k'-1}}^{T_{k'}-\varepsilon} a(T_{k'}-t)^{-\alpha} dt
++ \sum_{i=i_{(k-1)}}^{i_{(k)}-1} b1_{ [T_k- \varepsilon ,  T_k)}(t_i) (t_{i+1}-t_i)(T_k-t_i)^{\beta} \right), 
+\end{align*}
+because $(T_{k'}-t_i)^{-\alpha} \leqq (T_{k'}-t)^{-\alpha}$ for  $t_i \leqq t \leqq t_{i+1} $.
+\\
+On the other hand,
+$$ 
+\sum_{k=1}^K   \sum_{k'=k}^K \int_{T_{k'-1}}^{T_{k'}-\varepsilon} (T_{k'}-t)^{-\alpha} dt 
+\leqq K^2  \hat{e}(\varepsilon,\alpha),$$
+and
+$$
+\sum_{k=1}^K  \sum_{i=i_{(k-1)}}^{i_{(k)}-1} 1_{ [T_k- \varepsilon ,  T_k)}(t_i) (t_{i+1}-t_i)(T_k-t_i)
+\leqq K \varepsilon^2,
+$$
+So we have Equation (\ref{sum1}).\\
+Next we show Equation (\ref{sum2}).
+\begin{align*}
+&\sum_{i=0}^{n-1} (t_{i+1}-t_i) (\sum_{k_1; T_{k_1} \geqq t_{i+1}} \phi^{(k_1)}(t_i, \varepsilon; a_1, \alpha_1, b_1, \beta_1)) 
+ (\sum_{k_1; T_{k_1} \geqq t_{i+1}} \phi^{(k_2)}(t_i, \varepsilon; a_2, \alpha_2, b_2, \beta_2))  \\
+\leqq &  \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} (t_{i+1}-t_i) \sum_{j=1}^4 I^{(k)}_{i,j},
+\end{align*}
+where
+$$
+I^{(k)}_{i,1} = \sum_{k_1, k_2 = k}^K a_1 a_2 (T_{k_1} -t_i)^{-\alpha_1} (T_{k_2} -t_i)^{-\alpha_2} 1_{[0, T_{k_1} - \varepsilon)} (t_i) 1_{[0, T_{k_2} - \varepsilon)} (t_i),
+$$
+$$
+I^{(k)}_{i,2} = \sum_{k_1, k_2 = k}^K a_1 b_2 (T_{k_1} -t_i)^{-\alpha_1} (T_{k_2} -t_i)^{\beta_2} 1_{[0, T_{k_1} - \varepsilon)} (t_i) 1_{[T_{k_2} - \varepsilon, T_{k_2})} (t_i),
+$$
+$$
+I^{(k)}_{i,3} = \sum_{k_1, k_2 = k}^K a_2 b_1 (T_{k_2} -t_i)^{-\alpha_2} (T_{k_1} -t_i)^{\beta_1} 1_{[0, T_{k_2} - \varepsilon)} (t_i) 1_{[T_{k_1} - \varepsilon, T_{k_1})} (t_i),
+$$
+$$
+I^{(k)}_{i,4} = \sum_{k_1, k_2 = k}^K b_1 b_2 (T_{k_1} -t_i)^{\beta_1} (T_{k_2} -t_i)^{\beta_2} 1_{[T_{k_1} - \varepsilon, T_{k_1})} (t_i)1_{[T_{k_2} - \varepsilon, T_{k_2})} (t_i).
+$$
+Note that (\ref{discEps}) and
+\begin{align*}
+1_{[0, T_{k_1} - \varepsilon)} (t_i) 1_{[T_{k} - \varepsilon, T_{k})} (t_i)=
+\begin{cases}
+0, k_1\leqq k\\
+1_{[T_{k} - \varepsilon, T_{k})} (t_i), k_1 >k,
+\end{cases}
+\end{align*}
+we have for $\ i \in \{i_{(k-1)}, \ldots, i_{(k)-1}\}$,
+$$
+I^{(k)}_{i,2} = \sum_{k_1=k+1}^K a_1 b_2 (T_{k_1} -t_i)^{-\alpha_1} (T_{k} -t_i)^{\beta_2} 1_{[T_{k} - \varepsilon, T_{k})} (t_i)
+$$
+$$
+\leqq K(T_{k+1}-T_k)^{-\alpha_1} a_1 b_2 (T_{k} -t_i)^{\beta_2} 1_{[T_{k} - \varepsilon, T_{k})} (t_i).
+$$
+We have the followings similarly.
+\begin{align*}
+&\sum_{i=0}^{n-1} (t_{i+1}-t_i) I^{(k)}_{i,1} \leqq a_1 a_2 \sum_{k_1, k_2 = k}^K \int_{t_{i_{(k-1)}}\wedge (T_{k_1} \wedge T_{k_2}-\varepsilon)}^{t_{i_{(k)-1}} \wedge (T_{k_1} \wedge T_{k_2}-\varepsilon)} (T_{k_1}\wedge T_{k_2} -t)^{-(\alpha_1+\alpha_2)} dt,\\
+&\sum_{i=0}^{n-1} (t_{i+1}-t_i) I^{(k)}_{i,2} \leqq C a_1 b_2 \varepsilon^{\beta_2 +1},\\
+&\sum_{i=0}^{n-1} (t_{i+1}-t_i) I^{(k)}_{i,3} \leqq C a_2 b_1 \varepsilon^{\beta_1+1},\\
+&\sum_{i=0}^{n-1} (t_{i+1}-t_i) I^{(k)}_{i,4} \leqq b_1 b_2 \varepsilon^{\beta_1+\beta_2 +1}.
+\end{align*}
+So we obtain (\ref{sum2}).
+\qed 
+
+\section{Proof of Theorem \ref{main2} and Theorem \ref{main1}}
+\begin{thm} \label{convergence}
+There exists a constant $C >0$ such that
+$$E^P[|\hat{c}_1(\varepsilon_L,\Delta,L)-c_{\Delta}|] \leqq C\left( L^{-(1-\delta)/2}  \hat{e}\left(\varepsilon, (1+\delta)(\tilde{N}+1)\ell_0/4 \right) + \varepsilon^2\right), L\geqq 1.$$
+\end{thm}
+{\it Proof.}
+$$E^P[|\hat{c}_1(\varepsilon_L,\Delta,L)-c_{\Delta}|]$$
+$$ \leqq \frac{1}{L}\sum_{\ell=1}^L \sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} |E^P[g(t_i,X(t_i,x))$$
+$$((Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k (X_{\ell}(t_i))- (P_{T_k-t_i}^{(k)}F_{m,k})(\pi_k (X_{\ell}(t_i)))]|.$$
+Then by Schwartz's inequality ,
+$$\frac{1}{L}\sum_{\ell=1}^L |E^P[g(t_i,X(t_i,x))
+(Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k (X_{\ell}(t_i))
+- (P_{T_k-t_i}^{(k)}F_{m,k})(\pi_k (X_{\ell}(t_i))]|$$
+$$\leqq \frac{1}{L}\sum_{\ell=1}^L E^P[|g(t_i,X(t_i,x))||
+(Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k (X_{\ell}(t))
+- (P_{T_k-t_i}^{(k)}F_{m,k})(\pi_k (X_{\ell}(t))|1_{[0, T_k-\varepsilon)}]$$
+$$+ C(T_k-t)1_{[T_k-\varepsilon, T_k)}$$
+$$\leqq \left( \frac{1}{L}\sum_{\ell=1}^L E^P[|
+ (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k (X_{\ell}(t))
+- (P_{T_k-t_i}^{(k)}F_{m,k})(\pi_k (X_{\ell}(t))|^2] \right)^{1/2} 1_{[0, T_k-\varepsilon)}$$
+$$\times E[g(t_i,X(t_i,x))^2]^{1/2} + C(T_k-t)1_{[T_k-\varepsilon, T_k)}$$
+By Proposition \ref{key}
+$$E^P[|\hat{c}_1(\varepsilon_L,\Delta,L)-c_{\Delta}|]$$
+$$\leqq C \sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k:T_k\geqq t_{i+1}}
+ \phi^{(k)}(t_i, \varepsilon;L^{-(1-\delta)/2}, (1+\delta)(\tilde{N}+1)\ell_0/4, 1, 1).$$
+By Proposition\ref{dd},
+we have the assertion. 
+\qed
+
+\begin{lem} \label{improve}
+Let $a, b \in {\bf R} $ and $c, \theta >0$. Then we have
+$$c|a| |1_{\{b \geqq 0\}} -1_{\{a \geqq 0\}}| \leqq c|b-a| 1_{\{ |b-a| \geqq \theta \}} +c\theta 1_{\{ |a| < \theta \}} $$
 \end{lem}
 {\it Proof.}
-By definition of $\mathcal{L}_k$, we can write $F_k=f_k\vee g_k = (f_k-g_k)\vee 0 +g_k,$ such that $\|\frac{\partial^{\alpha}f_k}{\partial x^{\alpha}}\|_{\infty} <\infty, \|\frac{\partial^{\alpha}g_k}{\partial x^{\alpha}}\|_{\infty} <\infty,  \text{for any } |\alpha| \geqq 1.$\\
-By It\^o's formula we can easily prove that
-$$E^{\mu}[ |(P^{(k)}_{T-t}g_k)(\pi_k{X}(t,x))-g_k(\pi_k{X}(t,x))|] \leqq C(T-t).$$
-So it is sufficient to prove for $(f_k-g_k)\vee 0$ and we set $h=f_k-g_k.$\\
-By It\^o's formula
-$$\bar{\varphi}_m(h(\pi_k{X}(T,x))-\bar{\varphi}_m(h(\pi_k{X}(t,x))$$
-$$=\int_t^T \varphi_m(h(\pi_k{X}(s,x)) \tilde{V}_{k,i}h(\pi_k{X}(s,x)) dB^{k,i}(s)$$
-$$+\int_t^T \varphi_m(h(\pi_k{X}(s,x)) \tilde{L}_k h(\pi_k{X}(s,x)) ds$$
-$$+\frac{1}{2} \int_t^T \varphi_m' (h(\pi_k{X}(s,x)) \sum_{i=1}^{\tilde{d}_k} (\tilde{V}_{k,i} h(\pi_k{X}(s,x)))^2 ds$$
-So we have
-$$E^{\mu}[\bar{\varphi}_m(h(\pi_k{X}(T,x))|\tilde{\mathcal{F}}^{(k)}_t]-\bar{\varphi}_m(h(\pi_k{X}(t,x))$$
-$$=\int_t^T E^{\mu}[\varphi_m(h(\pi_k{X}(s,x)) \tilde{L}_k h(\pi_k{X}(s,x))|\tilde{\mathcal{F}}^{(k)}_t] ds$$
-$$+\frac{1}{2} \int_t^T E[\varphi_m' (h(\pi_k{X}(s,x)) \sum_{i=1}^{\tilde{d}_k} (\tilde{V}_{k,i} h(\pi_k{X}(s,x)))^2 |\tilde{\mathcal{F}}^{(k)}_t] ds$$
-So we have
-$$E[|E^{\mu}[\bar{\varphi}_m(h(\pi_k{X}(T,x))|\tilde{\mathcal{F}}^{(k)}_t]-\bar{\varphi}_m(h(\pi_k{X}(t,x))|]$$
-$$\leqq \|\tilde{L}_k h\|_{\infty}(T-t)
-+\frac{1}{2} \int_t^T E[|\varphi_m' (h(\pi_k{X}(s,x))| \sum_{i=1}^{\tilde{d}_k} (\tilde{V}_{k,i} h(\pi_k{X}(s,x)))^2] ds,$$
-because $\varphi' \geqq 0$, we have
-$$\leqq \|\tilde{L}_k h\|_{\infty}(T-t)
-+\frac{1}{2} \int_t^T E[\varphi_m' (h(\pi_k{X}(s,x)) \sum_{i=1}^{\tilde{d}_k} (\tilde{V}_{k,i} h(\pi_k{X}(s,x)))^2] ds.$$
-On the other hand, we have
-$$E[\varphi_m' (h(\pi_k{X}(s,x)) \sum_{i=1}^{\tilde{d}_k} (\tilde{V}_{k,i} h(\pi_k{X}(s,x)))^2] $$
-$$=\sum_{i=1}^{\tilde{d}_k}E[\tilde{V}_{k,i}\{ \varphi_m (h(\pi_k{X}(s,x))  \tilde{V}_{k,i} h(\pi_k{X}(s,x)))\} 
--\varphi_m(h(\pi_k{X}(s,x))) \tilde{V}_{k,i}^2 h(\pi_k{X}(s,x)))]$$
-$$ \sum_{i=1}^{\tilde{d}_k} | \left( P^{(k)}_s \tilde{V}_{k,i}  \left( \varphi_m (h(\cdot))  (\tilde{V}_{k,i} h)(\cdot) \right) \right)(x)
--\varphi_m(h(\pi_k{X}(s,x))) \tilde{V}_{k,i}^2 h(\pi_k{X}(s,x)))] $$
-$$\leqq \sum_{i=1}^{\tilde{d}_k}( Cs^{-1/2}+\| \tilde{V}_{k,i}^2 h\|_{\infty}).$$
-It is bounded above by a constant $\tilde{C}$ with respect to $(T-t).$
-And by Lebesgue's convergence theorem, we have the assertion. \qed
-
-\begin{prop}\label{d1}
-Let $\delta \in (0,1)$, then there exists a $C_{\delta} > 0$ such that 
-\begin{align*}
-\int_{E_k} E[ d_{1, \varepsilon}^{(k)}(t,x) ] p^{(k)}(t, x_0, x)dx
-\leqq 
-\begin{cases}
- C_{\delta}L^{-(1-\delta)^2}, \quad 0 \leqq t <T_k- \varepsilon, \\
-C_{\delta} (T_k-t), \quad T_k - \varepsilon \leqq t < T_k, \\
-0, \quad T_k \leqq t < T.
-\end{cases}
-\end{align*}
-for any $\varepsilon >0$ and any $k=1,\ldots,K.$
-\end{prop}
-
-\noindent{\it Proof.}
- For the case $T_k-t \leqq \varepsilon$, the result follows by 
-Lemma \ref{discLem1}.
-We consider the case $T_k-t > \varepsilon$. 
-$$\int_{E_k} E^P[d_{1,\varepsilon}^{(k)}(t,x)]  p^{(k)}(t, x_0, x)dx$$
-$$= \int_{E_k} E^P[|(Q_{t,T_k, \varepsilon}^{(k)}(1-\varphi_k)F_k)(x)
--(P_{T_k-t}^{(k)} (1-\varphi_k)F_k)(x) |] p^{(k)}(t, x_0, x)dx $$
-$$\leqq \int_{E_k} (E^P[(Q_{t,T_k, \varepsilon}^{(k)} |(1-\varphi_k)F_k| )(x)]
-+ (P_{T_k-t}^{(k)} |(1-\varphi_k)F_k| )(x)) p^{(k)}(t, x_0, x)dx$$
-$$\leqq 2 \int_{E_k} (P_{T_k-t}^{(k)} (1-\varphi_k)|F_k|)(x) p^{(k)}(t, x_0, x)dx$$
-$$= 2 \int_{E_k} (1-\varphi_k(y))|F_k(y)| p^{(k)}(T_k, x_0, y)dx$$
-By the definition of $\varphi_k$, $(1-\varphi_k)p^{(k)}(T_k, x_0, x)^{(1-\delta)} \leqq L^{-(1-\delta)^2}.$
-So the right hand side is bounded above by
-$$2 L^{-(1-\delta)^2} \int_{E_k} |F_k(y)| p^{(k)}(T_k, x_0, y)^{\delta}dx.$$ 
-\qed
-\\
-
-We prepare for next Lemma.
-\begin{lemma} \label{kernel}
-For any $\delta \in (0,1)$ we have
-$$\int_{E_k}  p^{(k)}(T_k-t, x,y)^{2}p^{(k)}(t, x_0,x)dx$$
-$$ \leqq p^{(k)}(T_k, x_0,y)^{1-\delta} \left( \int_{E_k} p^{(k)} (t_i, x_0, x)p^{(k)} (T_k-t, x,y)^{(1+\delta)/\delta}dx\right)^{\delta}.$$
-\end{lemma}
-{\it Proof.}
-\begin{align}
-&\int_{E_k}  p^{(k)}(T_k-t, x,y)^{2}p^{(k)}(t, x_0,x)dx \nonumber \\
-=&\int_{E_k}  p^{(k)}(t, x_0,x) p^{(k)}(T_k-t, x,y)^{1-\delta} p^{(k)}(T_k-t, x,y)^{1+\delta}dx \label{holder}.
-\end{align}
-Applying H\"older's inequality for $p=1/(1-\delta)$ and $q = 1/\delta$,
-\begin{align*}
-(\ref{holder}) \leqq \left(\int_{E_k} p^{(k)}(T_k-t, x,y) p^{(k)}(t, x_0,x)  dx\right)^{1-\delta}
-\left(\int_{E_k} p^{(k)}(T_k-t, x,y)^{(1+\delta)/\delta} p^{(k)}(t, x_0,x) dx\right)^{\delta}.
-\end{align*}
-Then we have the result.
- \qed\\
- 
-\begin{prop}\label{d2}
-Let $\delta \in (0,1)$, then there exists a $C_{\delta} > 0$ such that
-\begin{align*}
-& \int_{E_k} E^P[\ d_{2,\varepsilon}^{(k)}(t,x)^2]^{1/2} p^{(k)}(t, x_0, x)dx\\
-&\leqq 
-\begin{cases}
-C_{\delta}(T_k-t)^{-(1+\delta)(\tilde{N}+1)\ell_0/4}L^{-(1-\delta)/2}, \quad 0 \leqq t <T_k- \varepsilon, \\
-C_{\delta} (T_k-t), \quad T_k - \varepsilon \leqq t < T_k, \\
-0, \quad T_k \leqq t < T,
-\end{cases}
-\end{align*}
-for any $\varepsilon >0$ and any $k=1,\ldots,K.$
-\end{prop}
-
-\noindent {\it Proof.}
-By Lemma \ref{discLem1}, it is sufficient to prove the case that
- $T_k-t > \varepsilon$. 
-Because $B^{(k)}(T_k-\varepsilon, \delta) \subset B^{(k)}(t, \delta), t< T_k-\varepsilon,$
-$d_{2,\varepsilon}^{(k)}(t,x) 
-\leqq 1_{B^{(k)}(t, \delta)}|(Q_{t,T_k, \varepsilon}^{(k)}\varphi_kF_k)(x)
--(P_{T_k-t}^{(k)} \varphi_kF_k)(x)|.$ So we have
-\begin{align}
-&\int_{E_k} E^P[\ d_{2,\varepsilon}^{(k)}(t,x)^2]^{1/2} p^{(k)}(t, x_0, x)dx \nonumber\\
-\leqq &\left( \int_{E_k} E^P[\ d_{2,\varepsilon}^{(k)}(t,x)^2] p^{(k)}(t, x_0, x)dx \right)^{1/2} \nonumber\\
-\leqq &\left( \int_{E_k} E^P[1_{B^{(k)}(t, \delta)}E^P[ |(Q_{t,T_k, \varepsilon}^{(k)}\varphi_kF_k)(x)
--(P_{T_k-t}^{(k)} \varphi_kF_k)(x) |^2| \mathcal{F}_t] ]p^{(k)}(T_k, x_0, x)dx \right)^{1/2} \label{d2_1}
-\end{align}
-By Propsition \ref{basic},
-\begin{align*}
-&1_{B^{(k)}(t, \delta)}E[ |(Q_{t,T_k, \varepsilon}^{(k)}\varphi_kF_k)(x)
--(P_{T_k-t}^{(k)} \varphi_kF_k)(x) |^2| \mathcal{F}_t]\\
-\leqq &1_{B^{(k)}(t, \delta)} \frac{1}{L} \int_{E_k} \frac{|\varphi_kF_k(y)|^2p^{(k)}(T_k-t, x,y)^2}{q_{t,T_k}^{(k,L,\omega)}(y)}dy
-\end{align*}
-Because 
-$ 1_{B^{(k)}(t, \delta)} q_{t,T_k}^{(k,L,\omega)}(y)^{-1} \leqq 2 p^{(k)}(T_k, x_0,y)^{-1}$
-by Proposition \ref{exSet}, 
-we have
-\begin{align*}
-&1_{B^{(k)}(t, \delta)} \frac{1}{L} \int_{E_k} \frac{|\varphi_kF_k(y)|^2p^{(k)}(T_k-t, x,y)^2}{q_{t,T_k}^{(k,L,\omega)}(y)}dy\\
-\leqq &\frac{2}{L} \int_{E_k} \frac{|\varphi_kF_k(y)|^2}{p^{(k)}(T_k, x_0,y)} p^{(k)}(T_k-t, x,y)^2 dy.
-\end{align*}
-So we have,
-\begin{align*}
-&\int_{E_k} E^P[\ d_{2,\varepsilon}^{(k)}(t,x)^2] p^{(k)}(t, x_0, x)dx\\
-\leqq &\frac{2}{L} \int_{E_k} \frac{|\varphi_kF_k(y)|^2}{p^{(k)}(T_k, x_0,y)} 
-(\int_{E_k} p^{(k)}(T_k-t, x,y)^2 p^{(k)}(t, x_0,x)dx)dy,
-\end{align*}
-by Lemma \ref{kernel},
-$$
-\leqq \frac{2}{L} \int_{E_k} \frac{|\varphi_kF_k(y)|^2}{p^{(k)}(T_k, x_0,y)^{\delta}} 
-(\int_{E_k} p^{(k)}(t, x_0, x) p^{(k)}(T_k-t, x,y)^{(1+\delta)/\delta}dx)^{\delta}dy.
-$$
-Now by Lemma \ref{heatKernel}, for any $m \geqq 0$,
-$$p^{(k)}(T_k-t, x,y) \leqq C(T_k-t)^{-(N_k+1)\ell_0/2}h(x)^{-(N_k+1)\ell_0}(1+|x|^2)^m(1+|y|^2)^{-m}.$$
-So there is a $C_1 >0$ such that
-$$\max_{k=1,\ldots,K}(\int_{E_k} h(x)^{-(N_k+1)\ell_0(1+\delta)/\delta}(1+|x|^2)^{m(1+\delta)/\delta}p^{(k)}(t, x_0,x)dx)^{\delta} \leqq C_1,$$
-and
-\begin{align*}
-&\int_{E_k} E^P[\ d_{2,\varepsilon}^{(k)}(t,x)^2] p^{(k)}(t, x_0, x)dx\\
-\leqq &\frac{C_1}{L} \int_{E_k} p^{(k)}(T_k, x_0,y)^{-\delta} |\varphi_kF_k(y)|^2(1+|y|^2)^{-m(1+\delta)}dy 
-(T_k-t)^{-(1+\delta)(N+1)\ell_0/2} ,
-\end{align*}
-Also because $\varphi_k(y)p^{(k)}(T_k, x_0,y)^{-\delta} \leqq L^{\delta}$, 
-\begin{align*}
-&\frac{C_1}{L} \int_{E_k} p^{(k)}(T_k, x_0,y)^{-\delta} |\varphi_kF_k(y)|^2(1+|y|^2)^{-m(1+\delta)}dy 
-(T_k-t)^{-(1+\delta)(N_k+1)\ell_0/2}  \\
-\leqq &C_1L^{-(1-\delta)}(T_k-t)^{-(1+\delta)(N_k+1)l_0/2} 
-\int_{E_k} |F_k(y)|^2(1+|y|^2)^{-m(1+\delta)}dy .
-\end{align*}
-If $m \geqq 2,$ because $F_k$ is Lipschitz continuous,
-$$\int_{E_k} |F_k(y)|^2(1+|y|^2)^{-m(1+\delta)}dy < \infty,$$
-and $$  (T_k-t)^{-(1+\delta)(N_k+1)l_0/2}/(T_k-t)^{-(1+\delta)(\tilde{N}+1)l_0/2} \leqq T^{(1+\delta)\tilde{N}l_0/2}<\infty,$$
-there is a ${C}_2$ such that
-$$C_1 L^{-(1-\delta)}(T_k-t)^{-(1+\delta)(N_k+1)l_0/2} 
-\int_{E_k} |F_k(y)|^2(1+|y|^2)^{-m(1+\delta)}dy$$
-$$\leqq {C}_2 (T_k-t)^{-(1+\delta)(\tilde{N}+1)l_0/2}L^{-(1-\delta)}.$$
-As a result, we have
-\begin{align*}
-\left( \int_{E_k} E^P[\ d_{2,\varepsilon}^{(k)}(t,x)^2] p^{(k)}(t, x_0, x)dx \right)^{1/2}
-\leqq ({C}_2 (T_k-t)^{-(1+\delta)(\tilde{N}+1)l_0/2}L^{-(1-\delta)})^{1/2}, \quad T_k-t > \varepsilon.
-\end{align*}
-So we have the assertion.
+If $|a| > |a-b|$, then 
+$$ 1_{\{b \geqq 0\}} -1_{\{a \geqq 0\}} = 0.$$
+So we see that
+$$ |a|( |1_{\{b \geqq 0\}} -1_{\{a \geqq 0\}}|$$
+$$\leqq |a| 1_{\{ |a| \leqq |a-b|\}}$$
+$$\leqq |a-b|1_{\{|a-b| \geqq \theta \}} +|a|1_{\{ |a| < \theta \}}.$$
 \qed
 
-\begin{prop}\label{dd}
-Let $\delta \in (0,1)$, then there exists a $C_{\delta} > 0$ such that
-\begin{align} 
-&E^P[\sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \int_{E_k} d_{1,\varepsilon}^{(k)}(t_i,x) p^{(k)}(t_i, x_0, x)dx]
-\leqq C_{\delta}(L^{-(1-\delta)^2}+\varepsilon^2), \label{dd1} \\
-&E^P [ \sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \int_{E_k} d_{2,\varepsilon}^{(k)}(t,x) p^{(k)}(t_i, x_0, x) dx  ]
-\leqq C_{\delta} (L^{-(1-\delta)^2/2}\varepsilon^{1-(1+\delta)(\tilde{N}+1)\ell_0/4} +\varepsilon^2),\label{dd2}
-\end{align}
-for any $\varepsilon >0.$
-\end{prop}
-
-\noindent {\it Proof.}
-We denote the partition as $$T_{k-1} = t_{i_{(k-1)}} < \ldots < t_{i_k-1} < t_{i_k}=T_k, k=1,\ldots,K.$$
-Then
-\begin{align*}
-&\sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} E^P[\int_{E_k} d_{1,\varepsilon}^{(k)}(t_i,x)] p^{(k)}(t_i, x_0, x)dx \\
-=&\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{k}-1} (t_{i+1}-t_i) \sum_{k'=k}^K E^P[\int_{E_{k'}} d_{1,\varepsilon}^{(k')}(t_i,x)] p^{(k')}(t_i, x_0, x)dx ,
-\end{align*}
-by Proposition \ref{d1},
-\begin{align*}
-\leqq &C_{\delta} \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{k}-1} (t_{i+1}-t_i) \sum_{k'=k}^K  \left( 1_{\{ 0\leqq t_i < T_{k'}- \varepsilon \}}L^{-(1-\delta)^2
-}+1_{\{ T_{k'}- \varepsilon \leqq t_i <  T_{k'}\}}(T_{k'}-t_i) \right)\\
-\leqq& C_{\delta}\left( KT L^{-(1-\delta)^2}
-+\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{k}-1}  (t_{i+1}-t_i) \sum_{k'=k}^K1_{\{ T_{k'}- \varepsilon \leqq t_i <  T_{k'}\}}(T_{k'}-t_i) \right).
-\end{align*}
-Because $T_k-T_{k-1} >\varepsilon$, if $i_{(k-1)} \leqq i \leqq i_{k}-1$ and $k' >k$, then $1_{\{ T_{k'}- \varepsilon \leqq t_i <  T_{k'}\}}=0.$
- So we have
-\begin{align*}
-&\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{k}-1}  (t_{i+1}-t_i) \sum_{k'=k}^K1_{\{ T_{k'}- \varepsilon \leqq t_i <  T_{k'}\}}(T_{k'}-t_i) \\
-=&\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{k}-1}  1_{\{ T_k- \varepsilon \leqq t_i <  T_k\}} (t_{i+1}-t_i)(T_k-t_i) \\
-\leqq &\sum_{k=1}^K \varepsilon \sum_{i=0}^{n-1}1_{\{ T_k- \varepsilon \leqq t_i <  T_k\}} (t_{i+1}-t_i)\\
-\leqq &K \varepsilon^2.
-\end{align*}
-
-Next we will prove the (\ref{dd2}) .
-\begin{align*}
-&E^P[ \sum_{i=0}^{n-1} (t_{i+1}-t_i) \int_{E_k} d_{2,\varepsilon}^{(k)}(t_i,x) p^{(k)}(t_i, x_0, x) dx]\\
-\leqq &\sum_{i=0}^{n-1} (t_{i+1}-t_i) \int_{E_k} E^P[ d_{2,\varepsilon}^{(k)}(t_i,x)^2]^{1/2} p^{(k)}(t_i, x_0, x) dx
-\end{align*}
-By Proposition  \ref{d2}, it is bounded above by
-\begin{multline*}
- C_{\delta} \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{k}-1} (t_{i+1}-t_i) \\
-\sum_{k'=k}^K  \left( 1_{\{ 0\leqq t_i < T_{k'}- \varepsilon \}} (T_{k'}-t_i)^{-(1+\delta)(\tilde{N}+1)\ell_0/4}L^{-(1-\delta)/2
-}+1_{\{ T_{k'}- \varepsilon \leqq t_i <  T_{k'}\}}(T_{k'}-t_i) \right)
-\end{multline*}
-By the argument of (\ref{dd1}), we have to consider only the first term.\\
-Because $(T_{k'}-t_i)^{-(1+\delta)(\tilde{N}+1)\ell_0/4} \leqq (T_{k'}-t)^{-(1+\delta)(\tilde{N}+1)\ell_0/4}, t_i \leqq t \leqq t_{i+1} $,
-\begin{align*}
-& \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{k}-1} (t_{i+1}-t_i) 
-\sum_{k'=k}^K
- 1_{\{ 0\leqq t_i < T_{k'}- \varepsilon \}} (T_{k'}-t_i)^{-(1+\delta)(\tilde{N}+1)\ell_0/4}\\
-\leqq &\sum_{k=1}^K\sum_{k'=k}^K  \int_{t_{i_{(k-1)}}}^{t_{i_{k}-1} \wedge T_{k'}-\varepsilon} (T_{k'}-t)^{-(1+\delta)(\tilde{N}+1)\ell_0/4} dt\\
-\leqq & \frac{K^2}{(\tilde{N}+1)\ell_0/4-1} \varepsilon^{1-(1+\delta)(\tilde{N}+1)\ell_0/4}.
-\end{align*}
-So the assertion follows.\qed 
-
-\section{Estimation of $\hat{c_1}(\omega)$ and $\hat{c_2}(\omega)$}
-Let 
-$$E_1(L,  \varepsilon)= L^{-(1-\delta)^2/2} +\varepsilon^2,$$
-$$E_2(L,  \varepsilon)= L^{-(1-\delta)^2/2}\varepsilon^{1-(1+\delta)(\tilde{N}+1)\ell_0/4} +\varepsilon^2.$$
-\subsection{Proof of Theorem \ref{main1}}
-We set $A_{L,\varepsilon}^{(k)}, k=1,\ldots,K$, , ${B}_{\varepsilon}$ and $\Omega_{L,\varepsilon}$ are
-as follows.
-\begin{align*}
-A_{L,\varepsilon}=\left \{ \omega \in \Omega; \sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \int_{E_k} d_{1,\varepsilon}^{(k)}(t_i,x) p^{(k)}(t_i, x_0, x)dx \leqq E_1(L,  \varepsilon)^{(1-\delta)} ,\right. \\
-\left. \sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \int_{E_k} d_{2,\varepsilon}^{(k)}(t,x) p^{(k)}(t_i, x_0, x) dx
-\leqq E_2(L,  \varepsilon)^{(1-\delta)}  \right\}
-\end{align*}
-$${B}_{\varepsilon} = \bigcap_{k=1}^K B^{(k)}(T_k-\varepsilon, \delta).$$
-$$\Omega_{L, \varepsilon} = A_{L,\varepsilon} \cap {B}_{\varepsilon}.$$
-
-\begin{prop} \label{exSet2}
-Let $L \to \infty, \varepsilon \to 0$ as 
-$E_2(L,\varepsilon) \to 0, \varepsilon^{-5\ell_0p}L^{-p^2\delta^2/2+1} \to 0,$then it follows
-$$P(\Omega_{L,\Delta, \varepsilon}^c) \to 0, \quad \text{as} \ L\to \infty, \varepsilon \to 0.$$
-\end{prop}
-{\it Proof.}
-$$P(\Omega_{L, \varepsilon}^{c})
-\leqq P(A_{L,\varepsilon}^c)+\sum_{k=1}^K P(B_{\varepsilon}^{(k),c}).$$
-
-\begin{align*}
-P((A_{L,\varepsilon}^{(k)})^c) \leqq &C_{\delta}( E_1(L,\varepsilon )^{\delta}+ E_2(L,\varepsilon )^{\delta}) \\
-\leqq &2 C_{\delta} E_2(L,\varepsilon )^{\delta}
-\end{align*}
-On the other hand, by Propostion \ref{exSet2}
-\begin{align*}
-P((B_{\varepsilon}^{(k)}))^c) \leqq 4^p E^P[(L^{(1-\delta^2)/2}\tilde{Z}_L(T_k-\varepsilon; \delta))^p]\leqq C_{p,\delta}\varepsilon^{-5\ell_0p}L^{-p^2\delta^2/2+1}.
-\end{align*}
-So we have the assertion.
-\qed
-
-\begin{prop}
-There exists $C_{\delta}$ such that
-\begin{align*}
-1_{\Omega_{L,\varepsilon} }|\hat{c}_1(\omega)-c_{\Delta}|
-\leqq &C_{\delta}  E_2(L,  \varepsilon)^{1-\delta} .
-\end{align*}
-Especially, if 
-$\varepsilon = L^{\frac{-(1-\delta)^2}{{2+(1+\delta)(\tilde{N}+1)\ell_0/2}} }, $
-we have
-\begin{align*}
-1_{\Omega_{L, \varepsilon} }|\hat{c}_2(\omega)-c_{\Delta}|
-\leqq L^{\frac{-3(1-\delta)^2}{ 2 (2+(1+\delta)(\tilde{N}+1)\ell_0/2) } }.
-\end{align*}
-
-\end{prop}
-{\it Proof.}
-\begin{align*}
-&1_{\Omega_{L, \varepsilon} }|\hat{c_1}(\omega)-c_{\Delta}|\\
-\leqq&1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
-E^{\mu}[\sum_{k;T_k\geqq t_{i+1}} |(Q_{t_i,T_k, \varepsilon}^{(k)}F_k)(\pi_k(X(t)))
--(P_{T_k-t_i}^{(k)}F_k)(\pi_k(X(t_i)))|],
-\end{align*}
-because $\tilde{B}_{\varepsilon} \subset B^{(k)}(T_k-\varepsilon, \delta) \subset B^{(k)}(t, \delta)$,
-for any $k$ and  $t \leqq T_k-\varepsilon$,
-\begin{align*}
-&\leqq 1_{A_{L,\Delta} }
-  \sum_{i=0}^{n-1}(t_{i+1}-t_i)\sum_{k;T_k\geqq t_{i+1}}
-E^{\mu}[1_{B^{(k)}(t_i, \delta)}|(Q_{t_i,T_k, \varepsilon}^{(k)}F_k)(\pi_k(X(t))) 
--(P_{T_k-t_i}^{(k)}F_k)(\pi_k(X(t_i)))|]\\
-\leqq
-&1_{A_{L,\Delta} }
-  \sum_{i=0}^{n-1}(t_{i+1}-t_i)\sum_{k;T_k\geqq t_{i+1}}
- \left( E^{\mu}[1_{B^{(k)}(t_i, \delta)}|(Q_{t_i,T_k, \varepsilon}^{(k)}\varphi_kF_k)(\pi_k(X(t))) 
--(P_{T_k-t_i}^{(k)}\varphi_k F_k)(\pi_k(X(t_i)))|] \right. \\
-+&\left. E^{\mu}[1_{B^{(k)}(t_i, \delta)}|(Q_{t_i,T_k, \varepsilon}^{(k)}(1-\varphi_k)F_k)(\pi_k(X(t))) 
--(P_{T_k-t_i}^{(k)}(1-\varphi_k)F_k)(\pi_k(X(t_i)))|] \right)
-\end{align*}
-$$\leqq 1_{A_{L,\Delta}}\sum_{i=0}^{n-1}(t_{i+1}-t_i) \sum_{k;T_k\geqq t_{i+1}}  
-(\int_{E_k} d_{1,\varepsilon}^{(k)}(t_i,x)p^{(k)}(t_i, x_0, x)dx
-+\int_{E_k} d_{2,\varepsilon}^{(k)}(t_i,x)p^{(k)}(t_i, x_0, x)dx).$$
-$$ \leqq  
- C_{\delta} \left( E_1(L,  \varepsilon) +E_2(L,  \varepsilon) \right)^{(1-\delta)/2}
-\leqq \tilde{C}_{\delta} E_2(L,  \varepsilon) ^{(1-\delta)}. $$
-As a result, we have the assertion. \qed\\
-
-\begin{prop}
+\begin{thm}
+Let $\delta \in (0,1), p>1.$ 
 Suppose that there is $ \gamma \in (0,1]$  and $C_{\gamma} >0$ such that
-  $$\sup_{\Delta} \sum_{i=0}^{n-1} (t_{i+1}-t_i)){\mu} (| \sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t_i}^{(k)}F_k)(\pi_k X(t_i)))| \leqq \theta ) \leqq C_{\gamma}\theta^{\gamma}$$
-then there exists $C>0$ such that
-\begin{align*}
-1_{\Omega_{L, \varepsilon} }|\hat{c}_2(\omega)-c_{\Delta}|
-\leqq C \left( \theta^{-1/2} E_2(L,  \varepsilon)^{(1-\delta)}+\theta^{\gamma+1}\right).
-\end{align*}
-Especially, if 
-$$\varepsilon = L^{\frac{-(1-\delta)^2}{{2+(1+\delta)(\tilde{N}+1)\ell_0/2}} }, \theta =  L^{\frac{-6(1-\delta)^2}{ (2\gamma+3) (2+(1+\delta)(\tilde{N}+1)\ell_0/2) } }, |\Delta| \leqq \theta^{\gamma+1}, $$
-we have
-\begin{align*}
-1_{\Omega_{L, \varepsilon} }|\hat{c}_2(\omega)-c_{\Delta}|
-\leqq L^{\frac{-6(\gamma+1)(1-\delta)^2}{ (2\gamma+3) (2+(1+\delta)(\tilde{N}+1)\ell_0/2) } }.
-\end{align*}
-\end{prop}
-{\it Proof.}
-Let $F^{(k)}_{P,i }, F^{(k)}_{Q,i }: {\bf R}^N \to {\bf R}$ be
-$$F^{(k)}_{P,i }(x) = \sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t_i}^{(k)} F_k) (\pi_k x),$$
-$$F^{(k)}_{Q,i }(x)=\sum_{k:T_k\geqq t_{i+1} } (Q_{t_i,T_k, \varepsilon}^{(k)}F_k)(\pi_k x), k=1,\ldots,K.$$
- 
-Then
-$$1_{\Omega_{L, \varepsilon} }|\hat{c}_2(\omega)-c_{\Delta}|$$
- $$
-  \leqq 1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
-|E ^{\mu}[\sum_{k:T_k\geqq t_{i+1}}F_k (\pi_k (X(T_k)))
-(1_{\{F^{(k)}_{Q,i}(\pi_k (X(t_i)) \geqq 0\}} -1_{\{F^{(k)}_{P,i}(\pi_k (X(t_i)) \geqq 0\}})]|,$$
- because $(1_{\{F^{(k)}_{Q,i}(\pi_k (X(t_i)) \geqq 0\}} -1_{\{F^{(k)}_{P,i}(\pi_k (X(t_i)) \geqq 0\}})$ is $\mathcal{F}_t$ measurable,
-  \begin{align*} 
-= &1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
-|E^{\mu}[ E ^{\mu}[\sum_{k:T_k\geqq t_{i+1}}F_k (\pi_k (X(T_k))) | \mathcal{F}_t]
-(1_{\{F^{(k)}_{Q,i}(\pi_k (X(t_i)) \geqq 0\}} -1_{\{F^{(k)}_{P,i}(\pi_k (X(t_i)) \geqq 0\}})]|,\\
-= &1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
-|E ^{\mu}[F^{(k)}_{P,i}(\pi_k (X(t_i))
-(1_{\{F^{(k)}_{Q,i}(\pi_k (X(t_i)) \geqq 0\}} -1_{\{F^{(k)}_{P,i}(\pi_k (X(t_i)) \geqq 0\}})]|\\
-   \leqq &1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
-E ^{\mu}[|F^{(k)}_{P,i}(\pi_k (X(t_i))| 
-|1_{\{F^{(k)}_{Q,i}(\pi_k (X(t_i)) \geqq 0\}} -1_{\{F^{(k)}_{P,i}(\pi_k (X(t_i)) \geqq 0\}}|]
- \end{align*}
- 
- Notice that
-$$ |1_{\{g \geqq 0\}} -1_{\{f \geqq 0\}}|$$
-$$=  1_{\{g \geqq 0, f < 0\}}+1_{\{g < 0, f \geqq 0\}}$$
-$$=1_{\{ |g-f| \geqq \theta \}} (1_{\{g \geqq 0, f < 0\}}+1_{\{g < 0, f \geqq 0\}})$$
-$$+1_{\{ |g-f| < \theta \}} (1_{\{g \geqq 0, f < 0\}}+1_{\{g < 0, f \geqq 0\}})$$
-$$\leqq 1_{\{ |g-f| \geqq \theta \}} (1_{\{g \geqq 0, f < 0\}}+1_{\{g < 0, f \geqq 0\}}) +1_{\{ |f| < \theta \}} ,$$
+  $$\sup_{\Delta} \sum_{i=0}^{n-1} (t_{i+1}-t_i)){\mu} (| \sum_{m=1}^M\sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t_i}^{(m)}F_{m,k})(\pi_m X(t_i,x^*)))| \leqq \theta )$$
+$$ \leqq C_{\gamma}\theta^{\gamma}, \theta\in(0,1).$$
+Then there exists a constant $C>0$ , $\tilde{\Omega}(L, \varepsilon) \in \mathcal{F}$, such that
+$$P( \tilde{\Omega}(L,\varepsilon)^c ) \leqq C \left( \left(
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right)
+  \right)^{\frac{ \delta(1+\gamma)}{2+\gamma}} \right),$$
 and
-$$|f| |1_{\{g \geqq 0\}} -1_{\{f \geqq 0\}}|$$
-$$\leqq |f| 1_{\{ |g-f| \geqq \theta \}} (1_{\{g \geqq 0, f < 0\}}+1_{\{g < 0, f \geqq 0\}}) +|f|1_{\{ |f| < \theta \}} .$$
-Because $|f| (1_{\{g \geqq 0, f < 0\}}+1_{\{g < 0, f \geqq 0\}}) \leqq |g-f|, $ we have
-$$|f| |1_{\{g \geqq 0\}} -1_{\{f \geqq 0\}}| \leqq |g-f| 1_{\{ |g-f| \geqq \theta \}} +\theta 1_{\{ |f| < \theta \}} $$
-$$\leqq |g-f| \vee \theta +\theta 1_{\{ |f| < \theta \}} $$.
-
-Applying it to $f = F^{(k)}_{P,i}(\pi_k (X(t_i)), g = F^{(k)}_{Q,i}(\pi_k (X(t_i))$
-$$1_{\Omega_{L, \varepsilon} }|\hat{c}_2(\omega)-c_{\Delta}|$$
-\begin{align*}
-  \leqq 1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
-&\left ( E ^{\mu}[|F^{(k)}_{Q,i}(\pi_k (X(t_i)) - F^{(k)}_{P,i}(\pi_k (X(t_i))| \vee \theta]
-+\theta \mu (|F^{(k)}_{P,i}(\pi_k (X(t_i))| \leqq \theta) \right)\\
-&=I_1+I_2,
-\end{align*}
+$$
+1_{\tilde{\Omega}(L,\varepsilon)}|\hat{c}_2(\varepsilon_L,\Delta,L)-c_{\Delta}|$$
+$$\leqq  C\left(
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right)
+  \right)^{\frac{(1-\delta)(1+\gamma)}{2+\gamma}}, $$
+  for $ L \geqq 1.$
+\end{thm}
+{\it Proof.}
+In this proof, we denote $X(t,x^*)$ by $X(t)$ for simplicity.
+Let $$\tilde{B}_{\varepsilon} = \bigcap_{m=1}^M \bigcap_{k=1}^K B^{(m,k)}(T_k-\varepsilon, \delta,L).$$
+Let $F_{P,i } : {\bf R}^N \to {\bf R}$ be given by
+$$F_{P,i }(x) = \sum_{\substack{m=1,\ldots,M \\ k:T_k\geqq t_{i+1}}} (P_{T_k-t_i}^{(m)} F_{m,k}) (\pi_m x),$$
+and let $F_{Q,i } : {\bf R}^N \to {\bf R}$ be given by
+$$F_{Q,i }(x)=\sum_{\substack{m=1,\ldots,M \\ k:T_k\geqq t_{i+1}} } (Q_{t_i,T_k, \varepsilon}^{(m)}F_{m,k})(\pi_m x).$$
+Then
+$$1_{\tilde{B}_{\varepsilon} }|\hat{c}_2(\varepsilon_L,\Delta,L)-c_{\Delta}|$$
+ $$
+  \leqq 1_{\tilde{B}_{\varepsilon} }\sum_{i=0}^{n-1}(t_{i+1}-t_i)
+|E ^{\mu}[|g(t_i, X(t_i))|\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}}F_{m,k} (\pi_k (X(T_k)))
+(1_{\{F_{Q,i}(X(t_i) \geqq 0\}} -1_{\{F_{P,i}(X(t_i) \geqq 0\}})]|,$$
+  \begin{align*} 
+   \leqq &1_{\tilde{B}_{\varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
+E ^{\mu}[|g(t_i, X(t_i))||F_{P,i}(X(t_i)| 
+|1_{\{F_{Q,i}(X(t_i) \geqq 0\}} -1_{\{F_{P,i}(X(t_i) \geqq 0\}}|],
+ \end{align*}
+since $|g(t_i, X(t_i))|(1_{\{F_{Q,i}(X(t_i) \geqq 0\}} -1_{\{F_{P,i}(X(t_i) \geqq 0\}})$ is $\mathcal{F}_t$ measurable.
+ \\
+Applying Lemma \ref{improve} to $a = F_{P,i}(X(t_i), b = F_{Q,i}(X(t_i),$ and $c=|g(t_i, X(t_i))|,$ we have
+$$1_{\tilde{B}_{\varepsilon} }|\hat{c}_2(\varepsilon_L,\Delta,L)-c_{\Delta}|\leqq I_1 +I_2, $$
 where
 \begin{align*}
-&I_1=1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
-E ^{\mu}[|F^{(k)}_{Q,i}(\pi_k (X(t_i)) - F^{(k)}_{P,i}(\pi_k (X(t_i))| \vee \theta],\\
-&I_2=1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)\theta \mu (|F^{(k)}_{P,i}(\pi_k (X(t_i))| \leqq \theta)
+&I_1=1_{\tilde{B}_{\varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)
+E ^{\mu}[|g(t_i, X(t_i))||F_{Q,i}(X(t_i) - F_{P,i}(X(t_i)| 1_{\{|F_{Q,i}(X(t_i) - F_{P,i}(X(t_i)| > \theta \}}],\\
+&I_2=1_{\tilde{B}_{\varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i) \theta E^{\mu} [|g(t_i, X(t_i))||1_{\{F_{P,i}(X(t_i)| \leqq \theta \}}].
 \end{align*}
-By assumption $I_2 \leqq C_{\gamma}\theta^{\gamma+1}$.
+By H\"{o}lder's inequality,
+$$I_2 \leqq \theta E^{\mu}[|g(t_i, X(t_i))|^{1/\delta}]^{\delta} \mu (|F_{P,i}(X(t_i)| \leqq \theta)^{1-\delta} \leqq  C \theta \mu (|F_{P,i}(X(t_i)| \leqq \theta).$$
+From the assumption, we have
+$$I_2 \leqq C \theta^{(\gamma+1)(1-\delta)}.$$
 Next we will estimate $I_1$.
-\begin{multline*}
-I_1\leqq 1_{\Omega_{L, \varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i) \sum_{k:T_k\geqq t_{i+1} } E ^{\mu}[
- |Q_{t_i,T_k, \varepsilon}^{(k)}(\pi_k (X(t_i))) -  (P_{T_k-t_i}^{(k)} F_k) (\pi_k (X(t_i)))| \vee \theta]  \\
-\leqq 1_{A_{L,\Delta}} \sum_{i=0}^{n-1}(t_{i+1}-t_i) \sum_{k:T_k\geqq t_{i+1} } 
-E ^{\mu}[ \left(d_{1,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i))) +d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i) \right) \vee  \theta]  
-\end{multline*}
-Then notice that for any $d_1, d_2 \geqq 0,$
-$$(d_1+d_2)\vee \theta$$
-$$=(d_1+d_2) 1_{\{(d_1+d_2)\geqq \theta\}}$$
-$$\leqq d_1 + d_2 1_{\{d1\geqq \theta/2\}} + d_2 1_{\{d2\geqq \theta/2\}}$$
-
-So we have
-$$I_1\leqq I_{1,1}+I_{1,2}+I_{1,3},$$
+$$
+|F_{Q,i}(X(t_i)) - F_{P,i}(X(t_i))| \leqq \sum_{m=1}^M\sum_{k:T_k\geqq t_{i+1}}  (d_{1,\varepsilon,L}^{(m,k)}(t_i,X(t_i))
++ d_{2,\varepsilon,L}^{(m,k)}(t_i,X(t_i)) +d_{3,\varepsilon,L}^{(m,k)}(t_i,X(t_i)))
+$$
+\begin{align*}
+&I_1\leqq 1_{\tilde{B}_{\varepsilon} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)  E ^{\mu}[ |g(t_i,X(t_i))| \\
+&\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} }\left(d_{1,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i))) +d_{2,\varepsilon,L}^{(m, k)}(t_i, \pi_m (X(t_i) + d_{3,\varepsilon,L}^{(m, k)}(t_i, \pi_m (X(t_i) \right)  \\
+&\times 1_{\{\sum_{m=1}^M\sum_{k:T_k\geqq t_{i+1} }  (d_{1,\varepsilon,L}^{(m, k)}(t_i, \pi_m (X(t_i))) +d_{2,\varepsilon,L}^{(m, k)}(t_i, \pi_m (X(t_i)) + d_{3,\varepsilon,L}^{(m, k)})(t_i, \pi_m (X(t_i))) > \theta\} }]  .
+\end{align*}
+$I_1$ is dominated by
+$$I_1\leqq I_{1,1}+I_{1,2}+I_{1,3}+I_{1,4},$$
 where
 $$
-I_{1,1}= 1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i) \sum_{k:T_k\geqq t_{i+1} } E ^{\mu}[d_{1,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i))) ],
+I_{1,1}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } E ^{\mu}[|g(t_i,X(t_i))|d_{1,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i))) ],
 $$
 $$
-I_{1,2}= 1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)  \sum_{k:T_k\geqq t_{i+1} } E ^{\mu}[d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i) 
-1_{\{d_{1,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i)  > \theta/2\}}],
+I_{1,2}= \sum_{i=0}^{n-1}(t_{i+1}-t_i)   E ^{\mu}[\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } |g(t_i,X(t_i))|d_{2,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i)))$$
+$$\times 1_{\{\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } (d_{1,\varepsilon,L}^{(m,k)}(t_i, \pi_k (X(t_i) + d_{3,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i))  > \theta/2\}}],
 $$
 $$
-I_{1,3}= 1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)  \sum_{k:T_k\geqq t_{i+1} } E ^{\mu}[d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i) 
-1_{\{d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i)  > \theta/2\}}],
+I_{1,3}= \sum_{i=0}^{n-1}(t_{i+1}-t_i)  E ^{\mu}[\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } |g(t_i,X(t_i))|d_{2,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i) ))$$
+$$\times 1_{\{\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } d_{2,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i)  > \theta/2\}}].
 $$
-\\
-First $I_{1,1}$ is easily estimated by the definition of $A_{L,\Delta}$
+$$I_{1,4}= \sum_{i=0}^{n-1}(t_{i+1}-t_i)  E ^{\mu}[\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } |g(t_i,X(t_i))|d_{3,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i) ))]$$
+From Proposition \ref{d12},
 $$
-I_{1,1}=1_{A_{L,\Delta}} \sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \int_{E_k} d_{1,\varepsilon}^{(k)}(t,x) p^{(k)}(t_i, x_0, x)dx 
-\leqq C_{\delta}E_2(L, \varepsilon)^{1-\delta}.
+E^P[I_{1,1}]=\sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{\substack{m=1,\ldots,M,\\ k; T_k \geqq t_{i+1}} } \int_{E} E^P[d_{1,\varepsilon,L}^{(m,k)}(t,\tilde{x}_m) ]
+|g(t_i,x)| p(t_i, x^*, x)dx 
+$$
+$$
+\leqq C\sum_{i=0}^{n-1} (t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}}  \phi^{(k)}(t_i,\varepsilon; L^{-(1-\delta)^3}, 0,0, 0)$$
+$$
+\leqq C\hat{e}\left(\varepsilon,L^{-(1-\delta)^3}\right).
 $$
 \\
 Next, we will estimate $I_{1,2}$.  By H\"{o}lder's inequality
 $$I_{1,2}\leqq 
-1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)  \sum_{k:T_k\geqq t_{i+1} } E ^{\mu}[d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i)))^2]^{1/2} 
-E^{\mu}[1_{\{d_{1,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i)  > \theta/2\}}]^{1/2},$$
-$$\leqq 
-1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)  \sum_{k:T_k\geqq t_{i+1} } E ^{\mu}[d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i)))^2]^{1/2} 
-(\frac{2}{\theta} E[d_{1,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i) ])^{1/2},$$
-by using schwartz's inequality to the summation with respect to $k$,
-$$\leqq \sqrt{\frac{2}{\theta}} 1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i)   \left(\sum_{k:T_k\geqq t_{i+1} }E ^{\mu}[d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i)))^2]\right)	^{1/2} 
-\left(\sum_{k:T_k\geqq t_{i+1} } E[d_{1,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i) ])\right)^{1/2},$$
-regarding $\frac{(t_{i+1}-t_i)}{T}, i\ldots, n$ as probability and using the H\"{o}lder's inequality, 
-\begin{multline*}
-\leqq T\sqrt{\frac{2}{\theta}} 1_{A_{L,\Delta} }   \left(\sum_{i=0}^{n-1}(t_{i+1}-t_i)  \sum_{k:T_k\geqq t_{i+1} }E ^{\mu}[d_{2,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i)))^2]\right)	^{1/2} \\
-\left(\sum_{i=0}^{n-1}(t_{i+1}-t_i)  \sum_{k:T_k\geqq t_{i+1} } E[d_{1,\varepsilon}^{(k)}(t_i, \pi_k (X(t_i) ])\right)^{1/2},
-\end{multline*}
-$$\leqq T \sqrt{\frac{2}{\theta}} \left(E_1(L, \varepsilon) E_2(L, \varepsilon)\right)^{(1-\delta)/2}$$
+ \sum_{i=0}^{n-1}(t_{i+1}-t_i)   E ^{\mu}[(\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } d_{2,\varepsilon,L}^{(m, k)}(t_i, \pi_m (X(t_i)))^2)]^{1/2} 
+ $$
+ $$
+\times E^{\mu}[|g(t_i,X(t_i))|^{2/\delta}]^{\delta/2}E^{\mu}[1_{\{\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } (d_{1,\varepsilon,L}^{(m,k)}(t_i, \pi_m(X(t_i) + d_{3,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i) ) > \theta/2\}}]^{(1-\delta)/2},$$
 $$
-\leqq \frac{2KC_{\delta}}{\sqrt{\theta}}  \left(  L^{-(1-\delta)^2}\varepsilon^{1-(1+\delta)(\tilde{N}+1)\ell_0/2} + \varepsilon^3+\varepsilon^2|\Delta| \right)^{(1-\delta)/2}( L^{-(1-\delta)^2}+\varepsilon^2+\varepsilon |\Delta|)^{(1-\delta)/2}. 
-$$ 
-\\
-Next we will estimate $I_{1,3}$
-$$I_{1,3}\leqq 
-\frac{2}{\sqrt{\theta}} 1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i) E[D_{2,\varepsilon}(t_i, X(t_i))^2]^{1/2}
- E[ D_{2,\varepsilon}(t_i, X(t_i))]^{1/2}$$
-$$ =\frac{2}{\sqrt{\theta}} 1_{A_{L,\Delta} } T\sum_{i=0}^{n-1}\frac{(t_{i+1}-t_i)}{T} E[D_{2,\varepsilon}(t_i, X(t_i))^2]^{1/2}
- E[ D_{1,\varepsilon}(t_i, X(t_i))]^{1/2}$$
- By Holder's inequality
- $$ \leqq \frac{2}{\sqrt{\theta}} 1_{A_{L,\Delta} } T (\sum_{i=0}^{n-1}\frac{(t_{i+1}-t_i)}{T} E[D_{2,\varepsilon}(t_i, X(t_i))^2])^{1/2}
- (\sum_{i=0}^{n-1}\frac{(t_{i+1}-t_i)}{T} E[ D_{2,\varepsilon}(t_i, X(t_i))])^{1/2}$$
-$$\leqq \frac{2K}{\sqrt{\theta}} ( 1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \int_{E_k} d_{2,\varepsilon}^{(k)}(t,x)^2 p^{(k)}(t_i, x_0, x)dx )^{1/2}$$
-$$\times ( 1_{A_{L,\Delta} } \sum_{i=0}^{n-1}(t_{i+1}-t_i) \sum_{k; T_k \geqq t_{i+1}} \int_{E_k} d_{2,\varepsilon}^{(k)}(t,x) p^{(k)}(t_i, x_0, x)dx )^{1/2}
-$$
-$$
-\leqq \frac{2KC_{\delta}}{\sqrt{\theta}}   \left(  L^{-(1-\delta)^2}\varepsilon^{1-(1+\delta)(\tilde{N}+1)\ell_0/2} + \varepsilon^3+\varepsilon^2|\Delta| \right)^{(1-\delta)}.
-$$ 
-As a result, there is a $\tilde{C} >0$ such that
-$$I_1\leqq \frac{\tilde{C}}{\sqrt{\theta}} \left(  L^{-(1-\delta)^2}\varepsilon^{1-(1+\delta)(\tilde{N}+1)\ell_0/2} + \varepsilon^3+\varepsilon^2|\Delta| \right)^{(1-\delta)}.$$
-
-On the other hand,
-$$I_2 \leqq \theta \sum_{i=0}^{n-1} (t_{i+1}-t_i)){\mu} (| \sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t_i}^{(k)}F_k)(\pi_k X(t_i)))| \leqq \theta )$$
- By assumption, we have
- $$I_2 \leqq C\theta^{\gamma+1}.$$
-So we have our assertion. \qed
-
-
-\section{Estimation of $\hat{c_3}(\omega)$}
-
-
-\begin{proposition}\label{prop:key}
-Let $\delta \in (0,1)$, then there exists a $C_{\delta} > 0$ such that
-\begin{align*}
-&\frac{1}{L}\sum_{\ell=1}^L E^P[ |(Q_{t,T_k,\varepsilon}^{(k)}F_k)(\pi_k (X_{\ell}(t))) - (P_{t,T_k}f)(\pi_k (X_{\ell}(t))|^2]\\
-&\leqq 
-\begin{cases}
-C_{\delta}(T_k-t)^{-(1+\delta)(\tilde{N}+1)\ell_0/2}L^{-(1-\delta)}, \quad 0 \leqq t <T_k- \varepsilon, \\
-C_{\delta} (T_k-t), \quad T_k - \varepsilon \leqq t < T_k, \\
-0, \quad T_k \leqq t < T,
-\end{cases}
-\end{align*}
-for any $\varepsilon >0$ and any $k=1,\ldots,K.$
-
-\end{proposition}
-
-{\it Proof.}
-For the case $T_k-t > \varepsilon$, we have the assertion by Proposition 15 of \cite{KM}.
-For the case $T_k-\varepsilon \leqq  t < T_k$, we have the result by the same argument as the proof of \ref{d1}.
-\qed
-
-\subsection{Proof of Theorem \ref{main2}}
-Let $\Delta_n=t_0<t_1<\ldots <t_n=T$ 
-$$c_0^{(n)}=\sum_{i=1}^n (t_{i+1}-t_i)
-E^{\mu}[\{ \sum_{k: T_k >t_i} P^{(k)}_{t_i,T_k}F_k(\pi_k(X(t_i))) \} \vee 0].$$
-
-$$$$
-$$E^P[|\hat{c}_3-c_0|]\leqq E^P[|\hat{c}_3(\omega)-c_0^{(n)}|]+|c_0^{(n)}-c_0|.$$
-Then, by Lemma \ref{time disc},  there exists constant $C > 0$ which does not depend other parameters 
-such that
-$$E^P[|c_0^{(n)}-c_0| \leqq C|\Delta_n|.$$
-So we have to estimate only $ E^P[|\hat{c}_3(\omega)-c_0^{(n)}|].$
-
-$$E^P[|\hat{c}_3(\omega)-c_0^{(n)}|]$$
-$$\leqq \sum_{i=0}^{n-1} (t_{i+1}-t_i) E^P[|
-\frac{1}{L}\sum_{l=1}^L\{\sum_{k=1}^{K} (Q_{t,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k (X_{\ell}(t))\}\vee 0
--\frac{1}{L}\sum_{l=1}^L\{\sum_{k=1}^{K} (P_{T_k-t_i}^{(k)}F_k)(\pi_k (X_{\ell}(t))\}\vee 0|]$$
-$$+ \sum_{i=0}^{n-1} (t_{i+1}-t_i) E^P[|
-\frac{1}{L}\sum_{l=1}^L\{\sum_{k=1}^{K} (P_{T_k-t_i}^{(k)}F_k)(\pi_k (X_{\ell}(t))\}\vee 0
--E^{\mu}[\sum_{k=1}^{K}(P_{t,T_k}F_k)(X^{(k)}(t_i))\vee0]|]$$
-
-First term of left hand side is estimated as follows.
-$$E^P[|
-\frac{1}{L}\sum_{l=1}^L\{\sum_{k=1}^{K} (Q_{t,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k (X_{\ell}(t))\}\vee 0
--\frac{1}{L}\sum_{l=1}^L\{\sum_{k=1}^{K} (P_{T_k-t_i}^{(k)}F_k)(\pi_k (X_{\ell}(t))\}\vee 0|]$$
-$$\leqq \frac{1}{L}\sum_{l=1}^L E^P[|
-\sum_{k=1}^{K} (Q_{t,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k (X_{\ell}(t))
--\sum_{k=1}^{K} (P_{T_k-t_i}^{(k)}F_k)(\pi_k (X_{\ell}(t))|]$$
-$$\leqq \frac{1}{L}\sum_{l=1}^L \sum_{k=1}^{K} E^P[|
- (Q_{t,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k (X_{\ell}(t))
-- (P_{T_k-t_i}^{(k)}F_k)(\pi_k (X_{\ell}(t))|]$$
-Using Jensen's inequality twice , the last term is bounded above by
-$$ \sum_{k=1}^{K}( \frac{1}{L} \sum_{\ell=1}^L E^P[|
- (Q_{t,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k (X_{\ell}(t))
-- (P_{T_k-t_i}^{(k)}F_k)(\pi_k (X_{\ell}(t))|]^2)^{1/2}$$
-$$\leqq \sum_{k=1}^{K}( \frac{1}{L} \sum_{\ell=1}^L E^P[|
- (Q_{t,T_k,\varepsilon}^{(k,L,\omega)}F_k)(\pi_k (X_{\ell}(t))
-- (P_{T_k-t_i}^{(k)}F_k)(\pi_k (X_{\ell}(t))|^2])^{1/2}$$
+ \leqq C\sum_{i=0}^{n-1}(t_{i+1}-t_i)  E ^{\mu}[\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } d_{2,\varepsilon,L}^{(m,k)}(t_i, \pi_m (X(t_i)))^2]^{1/2} 
+ $$
+ $$
+\times (\frac{2}{\theta} E^{\mu}[\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1} } (d_{1,\varepsilon,L}^{(m, k)}(t_i, \pi_m (X(t_i)+ d_{3,\varepsilon,L}^{(m, k)}(t_i, \pi_m (X(t_i)) ])^{(1-\delta)/2}.$$
 So we have
-$$E^P[|\hat{c}_3(\omega)-c_0^{(n)}|]$$
-$$K \sum_{i=0}^{n-1} (t_{i+1}-t_i) 1_{\{t_i\leqq T_k-\varepsilon\}}(T_k-t_i)^{-(1-\delta)(\tilde{N}+1)\ell_0/4}L^{-(1-\delta)/2}$$
-$$+K \sum_{i=0}^{n-1} (t_{i+1}-t_i) 1_{\{T_k-\varepsilon < t_i \leqq T_k\}}(T_k-t_i)^{1/2}+CTL^{-1/2}$$
-By the same calculation of Proof of Proposition\ref{dd},
-$$E^P[|\hat{c}_3(\omega)-c_0^{(n)}|]$$
-$$\leqq C L^{-(1-\delta)/2}(\varepsilon^{1-(1+\delta)(\tilde{N}+1)\ell_0/4} + \varepsilon^{-(1+\delta)(\tilde{N}+1)\ell_0/4} |\Delta_n|)+\varepsilon^{1/2} (|\Delta_n|+\varepsilon)+CTL^{-1/2}.$$
-So when $\varepsilon = L^{-\frac{1-\delta}{1+(1+\delta)(\tilde{N}+1)\ell_0/2}}$ which is the same 
-order as Remark \ref{ddRem},
+\begin{align*}
+&E^P[ I_{1,2}] \leqq  C\sqrt{\frac{2}{\theta}} \sum_{i=0}^{n-1}(t_{i+1}-t_i)  
+E^P[\sum_{\substack{m=1,\ldots,M,\\k:T_k\geqq t_{i+1}} }  \int_{E_m} d_{2,\varepsilon,L}^{(m,k)}(t_i, x)^2 p^{(m)}(t_i, \tilde{x}_m^*, x)dx ]^{1/2}\\
+&\times E^P[ \sum_{\substack{m=1,\ldots,M,\\k:T_k\geqq t_{i+1}} } \int_{E_m} (d_{1,\varepsilon,L}^{(m,k)}(t_i, x) + d_{3,\varepsilon,L}^{(m,k)}(t_i, x)) p^{(m)}(t_i, \tilde{x}_m^*, x)dx ]^{(1-\delta)/2}\\
+\leqq &C \theta^{-(1-\delta)/2} \sum_{i=0}^{n-1}(t_{i+1}-t_i)  \left( \sum_{k:T_k\geqq t_{i+1} } \phi^{(k)}(t_i, \varepsilon; L^{-(1-\delta)^2/2}, (1-\delta^2)(\tilde{N}+1)\ell_0/4, 0, 0)\right) \\
+&\times \left(\sum_{k:T_k\geqq t_{i+1} } \phi^{(k)}(t_i, \varepsilon; L^{-(1-\delta)^4/2}, 0, 1, (1-\delta)/2)\right).
+\end{align*}
+By Proposition \ref{dd},
+$$
+E^P[ I_{1,2}]\leqq C\theta^{-1/2}  \left( L^{-(1-\delta)^4} \hat{e}\left(\varepsilon, (1-\delta^2)(\tilde{N}+1)\ell_0/4\right)
++ L^{-(1-\delta)^2/2}\varepsilon^{3(1-\delta)/2} \right).
+$$
+Similarly, we have 
+\begin{align*}
+&E^P[ I_{1,3}] \leqq  C \theta^{-(1-\delta)/2} \sum_{i=0}^{n-1}(t_{i+1}-t_i)  
+E[\sum_{\substack{m=1,\ldots,M,\\k:T_k\geqq t_{i+1}} }  \int_{E_m} d_{2,\varepsilon,L}^{(k)}(t_i, x)^2 p^{(k)}(t_i, \tilde{x}_k^*, x)dx ]^{(1-\delta)}\\
+\leqq &C \theta^{-(1-\delta)/2} \sum_{i=0}^{n-1}(t_{i+1}-t_i)  (\sum_{k:T_k\geqq t_{i+1} } \phi^{(k)}(t_i, \varepsilon; L^{-(1-\delta)^2/2}, (1-\delta^2)(\tilde{N}+1)\ell_0/4, 0,0) )^2\\
+  \leqq &C\theta^{-1} L^{-(1-\delta)^2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right).
+\end{align*}
+It follows easily that
+$$
+E^P[ I_{1,4}]\leqq C\varepsilon^2.
+$$
+Notice that
+$$
+\theta^{-(1-\delta)/2}  \hat{e}(\varepsilon, (1-\delta^2)(\tilde{N}+1)\ell_0/4) \leqq
+\theta^{-1}  \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right),
+$$
 we have
-$$E^P[|\hat{c}_3(\omega)-c_0^{(n)}|]\leqq C L^{-\frac{3/2(1-\delta)}{1+(1+\delta)(\tilde{N}+1)\ell_0/2}}$$
+$$
+E^P[I] \leqq C\left(\theta^{\gamma+1}+\theta^{-1}  
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right) \right).
+$$
+
+In particular if we take $\theta=\theta_L$ as 
+$$ 
+\theta_L=O\left(
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right)
+ \right)^{\frac{1}{2+\gamma}} ,$$
+then we have
+$$E^P[I] \leqq 
+ C\left(
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right)
+ \right)^{(1+\gamma)/(2+\gamma)} .$$
+
+Let $\tilde{\Omega}(L,\varepsilon)$ be
+\begin{align*}
+&\tilde{\Omega}(L,\varepsilon) =\tilde{B}_{\varepsilon}\cap  \{ \omega \in \Omega; \\
+&I \leqq C\left(\left(
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta)^2(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right)
+ \right)
+  \right)^{\frac{(1-\delta)(1+\gamma)}{2+\gamma}}  \}.
+\end{align*}
+From Proposition \ref{exSet}, we have
+$$P( \tilde{\Omega}(L,\varepsilon)^c ) \leqq C \left( \left(
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right)
+  \right)^{\frac{ \delta(1+\gamma)}{2+\gamma}} \right.$$
+$$\left.   + (\varepsilon^{-5\ell_0}L^{-p\delta^2/2+1/p})^p\right),$$
+and
+$$
+1_{\tilde{\Omega}(L,\varepsilon)}|\hat{c}_2(\varepsilon_L,\Delta,L)-c_{\Delta}|$$
+$$\leqq  C\left(
+L^{-(1-\delta)^2/2} \left( L^{-(1-\delta)^2/2} \hat{e}\left(\varepsilon,(1-\delta^2)(\tilde{N}+1)\ell_0/2 \right)+\varepsilon^{3(1-\delta)/2} \right)
+  \right)^{\frac{(1-\delta)(1+\gamma)}{2+\gamma}} .$$
+ \qed
+ 
+\begin{cor}
+
+Theorem \ref{main2} and
+Theorem \ref{main1} follow from the Theorem \ref{convergence} and Theorem \ref{improve}.
+
+\end{cor}
 
 \section{Numerical Example}\label{sec:nume}
-\subsection{Simple Case}
-Let $\{B(t); t\geqq 0\} $ be 1 dimensional Brownian motion.
+Let $\{B(t); t\geqq 0\} $ be 1-dimensional Brownian motion.
 Let $t_i = i/n, i=0,\ldots, n.$ Let $c$ be
+
+Let $X$ be a process defined by 
+\begin{align}
+  X(t) = x \exp\left( - \frac{1}{2} \sigma^2 t + \sigma B(t)  \right).
+\end{align}
+\begin{align}
+  c = E\left[\int_0^T  \left(V(X(T_i)) \vee 0 \right) dt \ \right], \\
+  V(X(t)) = E\left[\ \sum_{T_i>t}F(X(T_i)) \ | \mathcal{F}_t \right]
+\end{align}
+
+
 $$c=E [\int_0^1( E[B(1)|\mathcal{F}_t]\vee0 )\ dt ]=\frac{2}{3 \sqrt{2\pi}}.$$
 Let $c_{\Delta}$ be the discretization of $c$, such that
 $$
@@ -1239,97 +1374,74 @@ we show graph of "Average $i, i = 1,2$" and $c_{\Delta}$ in Figure \ref{fig1} an
 \noindent 
 We see in Figure \ref{fig1} that both $\hat{c}_1$ and $\hat{c}_2$ are close to $c_{\Delta}$,
 but we see in Figure \ref{fig2} that $\hat{c}_2$ is more stable than $\hat{c}_1.$
-\\
-\begin{table}[htb]
-\begin{center} 
-  \begin{tabular}{ccccc}
-    $L$ & Average 1& Average 2 &  Standard Deviation 1 & Standard Deviation 2\\ \hline 
-	100	&	0.2654599783 	&	0.2632060491 	&	0.0334099140 	&	0.0066656532 	\\
-	200	&	0.2655180439 	&	0.2643180950 	&	0.0244301557 	&	0.0064812199 	\\
-	400	&	0.2641632386 	&	0.2646417384 	&	0.0168528548 	&	0.0064796412 	\\
-	800	&	0.2661557058 	&	0.2648673390 	&	0.0114840865 	&	0.0064426983 	\\
-	1600	&	0.2658622710 	&	0.2649728715 	&	0.0092734158 	&	0.0064583976 	\\
-	3200	&	0.2659440890 	&	0.2650330723 	&	0.0071782226 	&	0.0064616852 	\\
-	6400	&	0.2648318867 	&	0.2650702303 	&	0.0050607508 	&	0.0064608708 	\\
 
-  \end{tabular}
-  \caption{Average and Standard Deviation} \label{nume}
+\begin{center}
+\includegraphics[width=18cm]{exposureAll.pdf}
 \end{center}
-\end{table}
 
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[width=12cm,bb=0 0 500 400]{numeresult1.pdf}
+\includegraphics[width=12cm]{BoxplotCva.pdf}
 \caption{Average} \label{fig1}
 \end{center}
 \end{figure} 
 
-\begin{figure}
-\begin{center}
-\includegraphics[width=12cm,bb=0 0 500 400]{numeresult2.pdf}
-\caption{Standard Deviation} \label{fig2}
-\end{center}
-\end{figure} 
 
-\subsection{Fx forward}
-Here we calculate more realistic case.
-Let $X$ be a process defined by the following SDE.
-\begin{align}
-  X(t) = x \exp\left( (\mu - \frac{1}{2} \sigma^2 )t + \sigma B(t)  \right).
-\end{align}
-\begin{align}
-  c = E\left[\int_0^T  \left(V(X(T_i)) \vee 0 \right) dt \ \right], \\
-  V(X(t)) = E\left[\ \sum_{T_i>t}F(X(T_i)) \ | \mathcal{F}_t \right]
-\end{align}
-\begin{center}
-\includegraphics[width=10cm]{figure_1.pdf}
-\end{center}
+
+ \newpage
 \begin{thebibliography}{99}
-
-\bibitem{KM}Kusuoka, S. , and Y. Morimoto, 
-\newblock Stochastic mesh methods for H{\" o}rmander type diffusion processes, 
-\newblock Preprint.
-%%
 \bibitem{AH}Avramidis, A.N. , and P. Hyden, 
 \newblock Efficiency improvements for pricing American options 
 with a stochastic mesh, 
 \newblock in Proceedings of the 1999 Winter Simulation Conference, pp. 344-350
 %%
+\bibitem{BG1} Broadie, M., and P. Glasserman,
+\newblock A stochastic mesh method for pricing high-dimensional American options
+\newblock J. Computational Finance, 7 (4) (2004), 35-72.
+%%
 \bibitem{DU} Duffie, D., M. Huang, 1996,
 \newblock  Swap Rates and Credit Quality, 
 \newblock Journal of Finance, Vol. 51, No. 3, 921
 %%
-\bibitem{B} Belomestny, D., 
-\newblock Pricing Bermudan Options by Nonparametric Regression: 
-Optimal Rates of Convergence for Lower Estimates,
-\newblock Finance and Stochastics, 15(2011), 655- 683.
+\bibitem{FT} Fujii, F., A. Takahashi
+\newblock Derivative Pricing under Asymmetric and Imperfect Collateralization, and CVA
+\newblock CARF Working Paper F-240, December 2010
 %%
-\bibitem{BG1} Broadie, M., and P. Glasserman,
-\newblock A stochastic mesh method for pricing high-dimensional American options
-\newblock J. Computational Finance, 7 (4) (2004), 35-72.
-%
 \bibitem{G}  Glasserman, P.,
 \newblock "Monte Carlo Methods in Financial Engineering"
 \newblock Springer,  2004, Berlin. 
 %%
+\bibitem{Gre}Gregory, J.,
+\newblock Counterparty credit risk and credit value adjustment: A continuing challenge for global financial markets, Second Editio,
+\newblock John Wiley ¥& Sons, 2012.
+%%
 \bibitem{K}Kusuoka, S.,
 \newblock Malliavin Calculus Revisited,
 \newblock  J. Math. Sci. Univ. Tokyo 10(2003), 261-277.
-%
+%%
 \bibitem{KS2}Kusuoka, S., and D.W.Stroock, 
 \newblock Applications of Malliavin Calculus II,
 \newblock J. Fac. Sci. Univ. Tokyo Sect. IA Math. 32(1985),1-76.
-%
+%%
+\bibitem{KM}Kusuoka, S. , and Y. Morimoto, 
+\newblock Stochastic mesh methods for H{¥" o}rmander type diffusion processes, 
+\newblock Preprint.
+%%
+\bibitem{H} Laborde're,H.
+\newblock Cutting CVA's Complexity,
+\newblock Risk Magazine, July, 2012, pp. 67-73.
+%%
 \bibitem{LH} Liu, G., and L.J. Hong,
 \newblock Revisit of stochastic mesh method for pricing American options,
 \newblock Operations Research Letters 37(2009), 411-414.
-%
+%%
 \bibitem{Sh}Shigekawa, I.,
 \newblock "Stochastic Analysis",
 \newblock Translation of Mathematical Monographs vol.224,
 AMS 2000.
-%
+%%
 \end{thebibliography}
 
 \end{document}
+
 
