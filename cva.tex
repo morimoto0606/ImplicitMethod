@@ -33,7 +33,8 @@
 
 
 \begin{document}
-\title{Explicit and Implicit American Monte Carlo Methods for XVA}
+\title{Explicit and Implicit American Monte Carlo Methods 
+for Portfolio wise Non Linear Computation}
 
 \author{
 Yusuke MORIMOTO
@@ -44,7 +45,8 @@ Bank of Tokyo Mitsubishi UFJ }
 
 \maketitle
 \begin{abstract}
-We introduce two types of numerical compuation algorithms of XVA based on American Monte Carlo methods. We call each algorithm as Explicit and Implicit methods.
+We introduce two types of numerical compuation algorithms for portfolio wise non linear 
+expectaion such as XVA. They are based on American Monte Carlo methods and we call each algorithm as Explicit and Implicit methods.
 In this paper, we propose the efficiency
 of Implicit method by showing theoritical convergence order and numerical simulation. 
 We use the Stochastic mesh methods as an typical example of American monte carlo methods.
@@ -62,7 +64,7 @@ In various situation in financial practice, calculation of following type of non
     C_0 = E^{\mu}\left[\int_{0}^T g(t, X(t))\left\{V(t) \vee0 \right \} \ dt \right],
 \end{align}
 where $(\Omega, \mathcal{F}, \{\mathcal{F}_t\}_{t\in [0,T]}, \mu)$ is a filtered probability space, $X$ is a underlying state process, $V(t)$ is the portfolio value of future date $t$, $T$ is the final maturity
-of all trades in the portfolio, and $g(t, x)$ is a deterministic function with respect to time and state space.\\
+of all trades in the portfolio, and $g(t, x)$ is a non negative deterministic function with respect to time and state space.\\
 In case that portfolio is composed of Eurean derivatives, $V(t)$ is expressed as
 \begin{align}\label{eq:V}
   V(t) =  E^{\mu} \left[ \sum_{k:T_k\geqq t}F_k\left({X}(T_k)\right) |\mathcal{F}_t \right],
@@ -76,9 +78,11 @@ To calculate $C_0$, we usually need a lot of computational resources for the fol
         If we chose naive monte carlo simulation, iteration number of monte carlo 
         simulation is multiplied.
     \item \label{item2} 
-        Dimension of $X$ is high when there are a lot of assets in the portflio. 
-        The path of $X$ should be generated at the same time for all products in 
-        the portfolio adue to the non-linearity in te equation (\ref{eq:C0}).
+        Dimension of $X$ mitht be high when there are a lot of assets in the portflio. 
+        If there is a linearity in the expectaiton, the problem is reduced to the
+        low dimensional problem. Du to the non-linearity in te equation (\ref{eq:C0}),
+        we must deal with high dimensional computaion problem.
+        non-linearity in te equation (\ref{eq:C0}).
 \end{enumerate}
 To deal with the problem \ref{item1}, American Monte carlo method is usually used (see \cite{G}).
 In the American Monte Carlo method, $V(t)$ is approximated by $\tilde{V}(t)$ which is rough but low computational cost estimation instead of naive monte carlo estimation.
@@ -97,26 +101,40 @@ $V(t)$ affects for the approximation accracy. In other words, how large the the 
 $\tilde{V}$ and $V$ exists, there is no approximation error as long as the sign of $V$ and $\tilde{V}$are the same.
 We call approximation by using equation(\ref{eq:implicit}) as "Implicit method" which is denoted by $C_{\text{implicit}}$.
 \begin{align}
-   C_{\text{implicit}}=E^{\mu}\left[\int_{0}^T \left\{ \sum_{k:T_k\geqq t} F_k({X}(T_k)) 1_{\{V(t) \geqq 0\}}\right \} \ dt \right].
+    C_{\text{implicit}}=E^{\mu}\left[\int_{0}^Tg(t, X(t)) \left\{ \sum_{k:T_k\geqq t} F_k({X}(T_k)) 1_{\{V(t) \geqq 0\}}\right \} \ dt \right].
 \end{align}
 In this paper we show two algorithms of approximation of $C_0$ based on "explicit method" and 
 "implicit method" and obtain the error estimation which includes both Monte Carlo error and
 discretization error.
-:w
 Least square monte carlo is more popular in plactice for its general algorithm and
 less computational cost.
 On the other hand, although it is only applicable to underlying path whose transition density function is  explicitly known, stochastic mesh method has accurate estimation(see \cite{KM}).
 In this paper, we use stochastic mesh method for this reasons.
 
+To deal with the second problem, we focus on the detail of payoffs and underlyings.
+The payoff of each derivative usually depends on a small number of assets.
+Let $$F(T_k, X(T_k) = \sum_{m=1}^M \tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
+Let $X^{(m)}(t)$ be ${\bf R}^{N_m}$-valued
+stochastic processes $, m=0, 1, \ldots, M.$ and $X(t)=(X^{(0)}(t),\ldots, X^{(M)}(t))$ is an underlying process. 
+We consider the model that the macro factor is determined by $X^{(0)}(t),$ and the payoff of each derivative at maturity $T_k, k=1,\ldots,K,$ is the form of
+$$\sum_{m=1}^M \tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
 where
 $$V_0(t) =E[ \sum_{k; T_k \geqq t}\sum_{m=1}^M F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
 and $F_{m,k}$ is a function such as 
 $$F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))=D(0,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
-Since $L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)$ is a function of $X(t),$ we denote it by $g(t,X(t)).$ Then CVA is given by the following form. 
+Then
+One of the most important exmaple of this prblem is XVA.
+XVA is obtained as .
 \begin{align}
-\text{CVA}&=E[\int_0^T g(t,X(t))  (E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t] \vee 0)  dt ] \label{defCVA2}.
+\text{CVA}&= E[L(\tau)D(0,\tau)1_{\{\tau <T\}}(\tilde{V}_0(\tau)\vee 0)] \nonumber\\
+&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)D(0,t) (\tilde{V}_0(t) \vee 0)  dt ] \nonumber\\
+&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t) (V_0(t) \vee 0)  dt ] \label{defCVA},
 \end{align}
-
+where
+$$V_0(t) =E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
+and $F_{m,k}$ is a function such as 
+$$F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))=D(0,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
+Since $L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)$ is a function of $X(t),$ we denote it by $g(t,X(t)).$ Then CVA is given by the following form. 
 
 
 
@@ -198,6 +216,7 @@ Since $L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)$ is a function of $X(t),$ we
 \end{align}
 
 \section{Main Results}
+\subsection{Setting for underlying process}
 Now we prepare the mathematical setting. 
 Let $M \geqq 1$ be fixed, ${N}_{m} \geqq 1, m=1, \cdots, M$, 
 $N= N_0+ \cdots + N_M,$ $ \tilde{N}_m=N_0+N_m,$ and $\tilde{N}=\max_{m=1\ldots,M}\tilde{N}_m$.\\
@@ -258,158 +277,7 @@ where ${V}_i, i =1,\ldots, d$ is
  \end{pmatrix} .
  \end{align*}
 
-We assume that vector fields ${V}_i, i=1,\ldots,d,$ satisfy condition (UFG) stated in the section \ref{vec}. 
-Let $E_m $ be defined by (\ref{defE}) in Section \ref{vec}. By \cite{KM}, if $\tilde{x}_m \in E_m,$ 
-the distribution law of $\tilde{X}^{(m)}(t,\tilde{x}_m)$ under $\mu$ has a smooth density function
-$p^{(m)}(t,\tilde{x_m},\cdot ):{\bf R}^{\tilde{N}_m}\to [0,\infty )$ for $t>0, m=1, \ldots, M.$\\
-Let $x^{*} =(x_0^*, \ldots, x_M^*) \in {\bf R}^N.$ We assume that the underlying asset process is $X(t)=X(t, x^*)$.
-We also assume that
-$$\tilde{x}^*_m=(x_0^*, x_m^*) \in E_m, m=1,\ldots, M.$$
-Let $\hat{{\cal D}}({\bf R}^n)$ denotes the space of functions on ${\bf R}^n$ given by
- $$\hat{{\cal D}}({\bf R}^n) =\{ f \in C^2({\bf R}^n); \|\frac{\partial^{\alpha}f}{\partial x^{\alpha}}\|_{\infty} <\infty, \text{for  } 1 \leqq |\alpha| \leqq 2 \},$$
- where $\|f\|_{\infty}=\sup \{|f(x)|; x\in {\bf R}^n\}$.\\
-${Lip}({\bf R}^n)$ denotes the space of Lipschitz continuous functions on ${\bf R}^n,$  and
-we define a semi-norm $\|\cdot \|_{Lip}$ on $Lip({\bf R}^n)$ by
-$$\|f\|_{{Lip}}=\sup_{x,y\in {\bf R}^n, x \neq y} \frac{|f(x)-f(y)|}{|x-y|},
-\quad f\in {Lip}({\bf R}^n).$$
-Let ${\cal M}({\bf R}^n)$ be the linear subspace of ${Lip}({\bf R}^n)$  spanned by
-$\{f \vee g;  f, g \in {\cal D}({\bf R}^n)\}.$\\
-\\
-We define linear operators 
-$P_{t}:{Lip}({\bf R}^N) \to {Lip}({\bf R}^N), t \geqq 0,$ by
-$$
-(P_{t}f)(x) = E^{\mu}[f(X(t,x))], \quad f\in {Lip}({\bf R}^N),
-$$
-and $P^{(m)}_{t}:{Lip}({\bf R}^{\tilde{N}_m}) \to {Lip}({\bf R}^{\tilde{N}_m}), t \geqq 0 , m=1, \ldots,M,$ by
-$$
-(P^{(m)}_{t}f)(\tilde{x}_m) = E^{\mu}[f(\tilde{X}^{(m)}(t,\tilde{x}_m))], \quad f \in {Lip}({\bf R}^{\tilde{N}_m}).
-$$
-We remind that $L(t)\exp(-\int_0^t\lambda(s)ds)\lambda(t) $ is represented by
-$$
-L(t)\exp(-\int_0^t\lambda(s)ds)\lambda(t) = g(t, X(t,x^*)).
-$$
-We assume that $g: [0,T] \times {\bf R}^N \to [0,\infty)$ satisfies the following two conditions.\\
-(1) $g(t,x)$ is differentiable in $t$ and there is an integer $n_1,$ and a constant $C_1 >0$ such that
-$$\sup_{t\in[0,T]}| \frac{\partial}{\partial t}g(t,x)|  \leqq C_1(1+|x|^{n_1})
-,\quad x \in {\bf R}^N.$$
-(2) $g(t,x)$ is $2$-times coninuously differentiable in $x$ and there is an integer $n_2,$ and a constant $C_2 >0$ such that
-$$
-\sup_{t\in[0,T]} |\frac{\partial^{\alpha}}{\partial x^{\alpha}}g(t,x)| \leqq C_2(1+|x|^{n_2}),\quad x \in {\bf R}^N
-$$
-for any multi index $|\alpha|\leqq 2.$
-\\
-We assume that a discounted payoff functions $F_{m,k}, m=1,\ldots, M, k=1,\ldots,K$ in equation (\ref{defCVA2}) 
-belong to ${\cal M}({\bf R}^{\tilde{N}_m}).$
-Under the assumptions above, CVA $c_0$ is given by 
-\begin{align}
-c_0 = E^{\mu}[\int_{0}^T \{ g(t,X(t,x^*)) 
-E^{\mu}[ \sum_{m=1}^M \sum_{k:T_k\geqq t} F_{m,k}(\tilde{X}^{(m)}(T_k, \tilde{x}^*_m)) |\mathcal{F}_t] \vee0\}dt ].
-\end{align}
-We will introduce numerical calculation methods by Monte Carlo simulation for $c_0$.\\
-\\
-Let $(\Omega ,{\cal F},P)$ be a probability space,
-and $X_{\ell }:[0,\infty )\times \Omega \to {\bf R}^N,$ 
-$\ell =1,2,\ldots ,$ be continuous stochastic processes such that 
-each probability law on $C([0,\infty );{\bf R}^N)$ of
-$X_{\ell}(\cdot )$ under $P$ is the same as  that of $X(\cdot ,{x}^*)$  for all $\ell$ $=1,2,\ldots ,$ and that
-$\sigma \{ X_{\ell}(t); \; t\geqq 0\},$ $\ell =1,2,\ldots ,$ are independent.\\
-Let us define projections $\pi_m: {\bf R}^N \to {\bf R}^{\tilde{N}_m}, m=1,\ldots,M,$ by
-$ \pi_m(x)= \tilde{x}_m=(x_0,x_m),$ 
-and define $\varepsilon_0 >0$ by
-$\varepsilon_0 =\min_{1\leqq k \leqq K}(T_k-T_{k-1}).$
-We define random linear operators (stochastic mesh operators)
- $Q_{t,T_k,\varepsilon}^{(m)}=Q_{t,T_k,\varepsilon}^{(m,L,\omega)}, 0 \leqq t \leqq T, 0 < \varepsilon <\varepsilon_0,$ 
-on $Lip({\bf R}^{\tilde{N}_m})$ by
-\begin{align*}
-&(Q_{t,T_k,\varepsilon}^{(m,L,\omega)}f)(\tilde{x}_m)
-=
-\begin{cases}
-\frac{1}{L} \sum_{\ell=1}^L \frac{f(X_{\ell}^{(m)}(T_k))p^{(m)}(T_k-t, \tilde{x}_m, \pi_m( X_{\ell}(T_k)))}{q_{t,T_k}^{(m,L,\omega)}(\pi_m (X_{\ell}(T_k)))}, 
-\quad 0 \leqq t < T_k-\varepsilon ,\\
-f(\tilde{x}_m), \quad T_k - \varepsilon \leqq t \leqq T_k, \\
-0, \quad T_k < t \leqq T .
-\end{cases}\\
-&\text{where} \quad q_{t,T_k}^{(m,L,\omega)}(\tilde{y}_m)=\frac{1}{L}\sum_{\ell=1}^L p^{(m)}(T_k-t, \pi_m(X_{\ell}(t)), \tilde{y}_m)).
-\end{align*}
-
-Let $\Pi$ denotes the set of partitions $\Delta=\{t_0,t_1,\ldots, t_n\}$ such that 
-$0=t_0 < t_1 < \ldots < t_n= T$ and that   
-$\{T_k; k=1,\ldots,K\} \subset \Delta.$
-Let $|\Delta|=\max_{i=1,\ldots,n}{(t_{i+1}-t_i)}.$
-We define estimators $\hat{c}_i=\hat{c}_i(\varepsilon,\Delta, L) : \Omega \to {\bf R}, i=1,2,$ in the following.
-\begin{align}
-&\hat{c}_1(\varepsilon, \Delta, L)(\omega) \nonumber\\
-=&\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} (t_{i+1}-t_i) g(t_i,X_{\ell}(t_i))
-(\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_{\ell}(t_i)))\vee0), \label{app1}\\
-\text{and}\nonumber \\
-&\hat{c}_2(\varepsilon, \Delta, L)(\omega)\nonumber\\
-=&\sum_{i=0}^{n-1}(t_{i+1}-t_{i}) E^{\mu}[g(t_i,X(t_i, x^*)) ( \sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} F_{m,k}(\pi_k X(T_k, x^*))) \nonumber \\
-& \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \times 1_{\{\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k X(t_i,x^*))) \geqq 0\}}]. \label{app2}
-\end{align}
-Our main results are following.
-\begin{theorem} \label{main2}
-Let $\alpha_0 = (1+\delta)(\tilde{N}+1)\ell_0/4 \vee 1.$ Let $\{\varepsilon_L\}_{L = 1}^{\infty} \subset (0, \varepsilon_0)$ be a sequence and suppose
- that there is a constant $C_0 \in (0, \infty)$ such that $ \varepsilon_L \leqq C_0 L^{-\frac{1+ \delta}{2(1+\alpha_0)}}, L\geqq 1.$
- Then there exists a constant $C_1 \in (0,\infty)$ such that
-$$
-E^P[|\hat{c}_1(\varepsilon_L, \Delta, L)-c_{0}|] \leqq C_1 (L^{-\frac{1}{1+\alpha_0}}+|\Delta|)
-$$
-for any $L \geqq 1$ and $\Delta \in \Pi.$
-\end{theorem}
-
-\begin{theorem}\label{main1} 
-Let $\alpha_1 = (1+\delta)(\tilde{N}+1)\ell_0/2 \vee 1,$ and
-let $\{\varepsilon_L\}_{L = 1}^{\infty} \subset (0, \varepsilon_0)$ be a sequence such that there is a constant $C_0 \in (0,\infty),$ 
-such that $\varepsilon_L \leqq C_0 L^{-\frac{1+ \delta}{2\alpha_1+1}}, L \geqq 1.$ 
-Suppose that there are constants $ \gamma \in (0,1]$  and $C_{\gamma} \in (0, \infty)$ such that
- $$\sup_{\Delta} \sum_{i=0}^{n-1} (t_{i+1}-t_i)){\mu} (| \sum_{m=1}^M\sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t_i}^{(m)}F_{m,k})(\pi_m X(t_i,x^*)))| \leqq \theta ) \leqq C_{\gamma}\theta^{\gamma}$$
-for all $ \theta \in (0,1].$\\
-Then then there exists a constant $C_1\ \in (0,\infty)$ and $\tilde{\Omega}(L) \in \mathcal{F},$  $L\geqq 1 ,$ such that
-$$P(\tilde{\Omega}(L)) \to 1, \ L\to \infty,$$
-and
-$$
-1_{\tilde{\Omega}(L)}|\hat{c}_2(\varepsilon_L, \Delta, L)-c_{0}|
-\leqq  C_1
-(L^{-(\frac{1}{2}+ \frac{(1-\delta)}{2 \alpha_1 +1}) \frac{1+\gamma}{2+\gamma}}+|\Delta|)
-$$
-for any $L\geqq 1,$ and $\Delta \in \Pi.$
-\end{theorem}
-
-\begin{remark}\label{actual}
-Let $\tilde{\Omega}'(L)$ be
-$$ \tilde{\Omega}'(L)=\left \{\omega \in \Omega; |\hat{c}_1(\varepsilon_L,\Delta,L) - c_0 | \leqq CL^{-\frac{1-\delta}{1+\alpha_0}} \right\}.$$
-Then by Theorem \ref{main2}, we see that
-$$
-P(\tilde{\Omega}'(L)) \to 1,  L\to \infty,
-$$
-and
-$$1_{\tilde{\Omega}(L) }|\hat{c}_1(\varepsilon_L,\Delta,L)-c_0| \leqq CL^{-\frac{1-\delta}{1+\alpha_0}}.
-$$
-Theorem \ref{main1} shows that the estimation of $\hat{c}_2$ may be better than $\hat{c}_1$. 
-\end{remark}
-
-We can compute the estimators $\hat{c}_i, i=1,2,$ practically in the following way.\\  
-\noindent First, we generate a family of independent paths 
-$${\bf X}_1 = \{X_{\ell }(t); 0 \leqq t \leqq T, \ell =1,2,\ldots ,L\}.$$
-Next, by using ${\bf X}_1$, we compute
-$$(Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_m(t_i))), \text{for every}\  k \  \text{such that} \ T_k > t_i .$$
-Then our estimator $\tilde{c}_1$ is
-$$\tilde{c}_1=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} g(t_i, X_{\ell}(t_i))( \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_{\ell}(t_i)))\vee0)(t_{i+1}-t_i). $$
-We used the same paths for Monte Carlo simulation and construction  of Stochastic mesh operator. 
-
-For $\tilde{c}_2$, we generate another independent family of independent paths $${\bf X}_2=\{X^{'}_{m }(t); 0 \leqq t \leqq T,  m =1,2,\ldots ,M\},$$
-and we compute 
-\begin{multline*}
-\tilde{c}_2= \frac{1}{M} \sum_{m=1}^M \sum_{i=0}^{n-1} g(t_i, X'_m(t_i)) \{ \sum_{k:T_k\geqq t_{i+1}}F_{m,k}(X_m^{'(k)}(T_k))\}\\
- \times 1_{\{\sum_{k:T_k\geqq t_{i+1}} (Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X^{'}_m(t_i)))) \geqq 0\}}(t_{i+1}-t_i).
- \end{multline*}
-
-In the above computations of $\tilde{c}_1$ and $\tilde{c}_2$, we use the values of $X_{\ell}(t_i), t_i \in \Delta$, only.\\
-As for the computation of $\tilde{c}_2,$  we do not use $Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k}$ explicitly.
-We use $Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k}$ only to judge whether $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i))))>0$ or not. 
- So the approximation has no error when the signs of  $(Q_{t,T,\varepsilon}^{(m,L,\omega)} F_{m,k})(\pi_k{X}(t)))$ and $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i)))$ are the same, even if there are large differences between them.
-
-\section{Structure of Vector Fields}\label{vec}
+\subsection{Setting for vector fields}
 Let ${\cal A}=\bigcup_{k = 1}^{\infty} \{ 0,1,\ldots , d \}^k$
 and ${\cal A}^{*}= {\cal A} \setminus \{ 0\} .$ 
 For $\alpha \in {\cal A}$, 
@@ -514,45 +382,182 @@ the distribution law of $\tilde{X}^{(m)}(t,\tilde{x}_m)$ under $\mu$ has a smoot
 $p^{(m)}(t,\tilde{x}_m,\cdot ):{\bf R}^{\tilde{N}_m}\to [0,\infty )$ for $t>0.$
 Moreover, by \cite{KM} we see  that $\int_{E_m} p^{(m)}(t,\tilde{x}_m,\tilde{y}_m)dy =1,$ $\tilde{x}_m\in E_m.$ 
 We have $p_m(t,\tilde{x}_m,y)=0, y\in E_m^c$ by \cite{KM}.\\
+Let $E_m $ be defined by (\ref{defE}). By \cite{KM}, if $\tilde{x}_m \in E_m,$ 
+the distribution law of $\tilde{X}^{(m)}(t,\tilde{x}_m)$ under $\mu$ has a smooth density function
+$p^{(m)}(t,\tilde{x_m},\cdot ):{\bf R}^{\tilde{N}_m}\to [0,\infty )$ for $t>0, m=1, \ldots, M.$\\
+Let $x^{*} =(x_0^*, \ldots, x_M^*) \in {\bf R}^N.$ We assume that the underlying asset process is $X(t)=X(t, x^*)$.
+We also assume that
+$$\tilde{x}^*_m=(x_0^*, x_m^*) \in E_m, m=1,\ldots, M.$$
 
-\section{Discretization error estimation}
+\subsection{Setting for functions}
+Let $\hat{{\cal D}}({\bf R}^n)$ denotes the space of functions on ${\bf R}^n$ given by
+ $$\hat{{\cal D}}({\bf R}^n) =\{ f \in C^2({\bf R}^n); \|\frac{\partial^{\alpha}f}{\partial x^{\alpha}}\|_{\infty} <\infty, \text{for  } 1 \leqq |\alpha| \leqq 2 \},$$
+ where $\|f\|_{\infty}=\sup \{|f(x)|; x\in {\bf R}^n\}$.\\
+${Lip}({\bf R}^n)$ denotes the space of Lipschitz continuous functions on ${\bf R}^n,$  and
+we define a semi-norm $\|\cdot \|_{Lip}$ on $Lip({\bf R}^n)$ by
+$$\|f\|_{{Lip}}=\sup_{x,y\in {\bf R}^n, x \neq y} \frac{|f(x)-f(y)|}{|x-y|},
+\quad f\in {Lip}({\bf R}^n).$$
+Let ${\cal M}({\bf R}^n)$ be the linear subspace of ${Lip}({\bf R}^n)$  spanned by
+$\{f \vee g;  f, g \in {\cal D}({\bf R}^n)\}.$\\
+\\
+We define linear operators 
+$P_{t}:{Lip}({\bf R}^N) \to {Lip}({\bf R}^N), t \geqq 0,$ by
+$$
+(P_{t}f)(x) = E^{\mu}[f(X(t,x))], \quad f\in {Lip}({\bf R}^N),
+$$
+and $P^{(m)}_{t}:{Lip}({\bf R}^{\tilde{N}_m}) \to {Lip}({\bf R}^{\tilde{N}_m}), t \geqq 0 , m=1, \ldots,M,$ by
+$$
+(P^{(m)}_{t}f)(\tilde{x}_m) = E^{\mu}[f(\tilde{X}^{(m)}(t,\tilde{x}_m))], \quad f \in {Lip}({\bf R}^{\tilde{N}_m}).
+$$
+We remind that $L(t)\exp(-\int_0^t\lambda(s)ds)\lambda(t) $ is represented by
+$$
+L(t)\exp(-\int_0^t\lambda(s)ds)\lambda(t) = g(t, X(t,x^*)).
+$$
+We assume that $g: [0,T] \times {\bf R}^N \to [0,\infty)$ satisfies the following two conditions.\\
+(1) $g(t,x)$ is differentiable in $t$ and there is an integer $n_1,$ and a constant $C_1 >0$ such that
+$$\sup_{t\in[0,T]}| \frac{\partial}{\partial t}g(t,x)|  \leqq C_1(1+|x|^{n_1})
+,\quad x \in {\bf R}^N.$$
+(2) $g(t,x)$ is $2$-times coninuously differentiable in $x$ and there is an integer $n_2,$ and a constant $C_2 >0$ such that
+$$
+\sup_{t\in[0,T]} |\frac{\partial^{\alpha}}{\partial x^{\alpha}}g(t,x)| \leqq C_2(1+|x|^{n_2}),\quad x \in {\bf R}^N
+$$
+for any multi index $|\alpha|\leqq 2.$
+\\
+We assume that a discounted payoff functions $F_{m,k}, m=1,\ldots, M, k=1,\ldots,K$ in equation (\ref{defCVA2}) 
+belong to ${\cal M}({\bf R}^{\tilde{N}_m}).$
+Under the assumptions above, CVA $c_0$ is given by 
+\begin{align}
+c_0 = E^{\mu}[\int_{0}^T \{ g(t,X(t,x^*)) 
+E^{\mu}[ \sum_{m=1}^M \sum_{k:T_k\geqq t} F_{m,k}(\tilde{X}^{(m)}(T_k, \tilde{x}^*_m)) |\mathcal{F}_t] \vee0\}dt ].
+\end{align}
 
-\subsection{Discretization}
-We define $c_{\Delta}, \Delta \in \Pi$ by
-$$c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)
-E^{\mu}[g(t_i,X(t_i,x^*))\{\sum_{m=1}^M\sum_{k; T_k \geqq t_{i+1}}^K(P_{T_k-t_i}^{(m)}F_{m,k})(\pi_mX(t_i,x^*))) \}\vee 0].
-$$
-When we set the index $i_{(k)}, k=1,\ldots, K,$ as $t_{i_{(k)}} = T_k,$
-we have the expression of $c_{\Delta}$ 
-$$
-c_{\Delta}=\sum_{k=1}^K\sum_{i=i_{(k-1)}}^{{i_{(k)}}-1}(t_{i+1}-t_i) E^{\mu}[ g(t_i,X(t_i,x^*))\{
-\sum_{m=1}^M \sum_{k'=k}^K(P_{T_k-t_i}^{(m)}F_{m, k'})(\pi_{m} X(t_i,x^*))\}\vee0 ].
- $$
-The difference between $c_0$ and $c_{\Delta}$ is estimated as follows.
- \begin{prop}\label{time disc}
-There exists a constant $C >0$ such that
-$$
-|c_0-c_{\Delta}| \leqq  C |\Delta|,\quad \Delta \in \Pi.$$.
-\end{prop}
-{\it Proof.}
-Let $$\tilde{F}_{k}(x)=\sum_{m=1}^M \sum_{k'=k}^K (P_{T_{k'}-T_{k}}^{(m)}F_{m,k'})(\pi_m x), k=1,\ldots,K.$$ then  the error between $c_0$ and $c_{\Delta}$ is bounded above by
+\subsection{Numerical calculation methods}
+We will introduce numerical calculation methods by Monte Carlo simulation for $c_0$.\\
+\\
+Let $(\Omega ,{\cal F},P)$ be a probability space,
+and $X_{\ell }:[0,\infty )\times \Omega \to {\bf R}^N,$ 
+$\ell =1,2,\ldots ,$ be continuous stochastic processes such that 
+each probability law on $C([0,\infty );{\bf R}^N)$ of
+$X_{\ell}(\cdot )$ under $P$ is the same as  that of $X(\cdot ,{x}^*)$  for all $\ell$ $=1,2,\ldots ,$ and that
+$\sigma \{ X_{\ell}(t); \; t\geqq 0\},$ $\ell =1,2,\ldots ,$ are independent.\\
+Let us define projections $\pi_m: {\bf R}^N \to {\bf R}^{\tilde{N}_m}, m=1,\ldots,M,$ by
+$ \pi_m(x)= \tilde{x}_m=(x_0,x_m),$ 
+and define $\varepsilon_0 >0$ by
+$\varepsilon_0 =\min_{1\leqq k \leqq K}(T_k-T_{k-1}).$
+We define random linear operators (stochastic mesh operators)
+ $Q_{t,T_k,\varepsilon}^{(m)}=Q_{t,T_k,\varepsilon}^{(m,L,\omega)}, 0 \leqq t \leqq T, 0 < \varepsilon <\varepsilon_0,$ 
+on $Lip({\bf R}^{\tilde{N}_m})$ by
 \begin{align*}
-&|c_0- c_{\Delta}| \leqq   \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} dt\\
-& E^{\mu}\left[ \left |g(t,X(t,x^*)) (P_{T_{k}-t} \tilde{F}_{k})(X(t,x^*)) \vee 0
--  g(t_i,X(t_i,x^*)) P_{T_{k}-t_i} \tilde{F}_{k} X(t_i,x^*)) \vee 0 \right| \right]
+&(Q_{t,T_k,\varepsilon}^{(m,L,\omega)}f)(\tilde{x}_m)
+=
+\begin{cases}
+\frac{1}{L} \sum_{\ell=1}^L \frac{f(X_{\ell}^{(m)}(T_k))p^{(m)}(T_k-t, \tilde{x}_m, \pi_m( X_{\ell}(T_k)))}{q_{t,T_k}^{(m,L,\omega)}(\pi_m (X_{\ell}(T_k)))}, 
+\quad 0 \leqq t < T_k-\varepsilon ,\\
+f(\tilde{x}_m), \quad T_k - \varepsilon \leqq t \leqq T_k, \\
+0, \quad T_k < t \leqq T .
+\end{cases}\\
+&\text{where} \quad q_{t,T_k}^{(m,L,\omega)}(\tilde{y}_m)=\frac{1}{L}\sum_{\ell=1}^L p^{(m)}(T_k-t, \pi_m(X_{\ell}(t)), \tilde{y}_m)).
 \end{align*}
 
-\subsection{Prepareations from Malliavin Calculus}
+Let $\Pi$ denotes the set of partitions $\Delta=\{t_0,t_1,\ldots, t_n\}$ such that 
+$0=t_0 < t_1 < \ldots < t_n= T$ and that   
+$\{T_k; k=1,\ldots,K\} \subset \Delta.$
+Let $|\Delta|=\max_{i=1,\ldots,n}{(t_{i+1}-t_i)}.$
+We define estimators $\hat{c}_i=\hat{c}_i(\varepsilon,\Delta, L) : \Omega \to {\bf R}, i=1,2,$ in the following.
+\begin{align}
+&\hat{c}_1(\varepsilon, \Delta, L)(\omega) \nonumber\\
+=&\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} (t_{i+1}-t_i) g(t_i,X_{\ell}(t_i))
+(\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_{\ell}(t_i)))\vee0), \label{app1}\\
+\text{and}\nonumber \\
+&\hat{c}_2(\varepsilon, \Delta, L)(\omega)\nonumber\\
+=&\sum_{i=0}^{n-1}(t_{i+1}-t_{i}) E^{\mu}[g(t_i,X(t_i, x^*)) ( \sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} F_{m,k}(\pi_k X(T_k, x^*))) \nonumber \\
+& \qquad \qquad \qquad \qquad \qquad \qquad \qquad \qquad \times 1_{\{\sum_{m=1}^M \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k X(t_i,x^*))) \geqq 0\}}]. \label{app2}
+\end{align}
+
+\subsection{Estimations for convergence order}
+Our main results are following.
+\begin{theorem} \label{main2}
+Let $\alpha_0 = (1+\delta)(\tilde{N}+1)\ell_0/4 \vee 1.$ Let $\{\varepsilon_L\}_{L = 1}^{\infty} \subset (0, \varepsilon_0)$ be a sequence and suppose
+ that there is a constant $C_0 \in (0, \infty)$ such that $ \varepsilon_L \leqq C_0 L^{-\frac{1+ \delta}{2(1+\alpha_0)}}, L\geqq 1.$
+ Then there exists a constant $C_1 \in (0,\infty)$ such that
+$$
+E^P[|\hat{c}_1(\varepsilon_L, \Delta, L)-c_{0}|] \leqq C_1 (L^{-\frac{1}{1+\alpha_0}}+|\Delta|)
+$$
+for any $L \geqq 1$ and $\Delta \in \Pi.$
+\end{theorem}
+
+\begin{theorem}\label{main1} 
+Let $\alpha_1 = (1+\delta)(\tilde{N}+1)\ell_0/2 \vee 1,$ and
+let $\{\varepsilon_L\}_{L = 1}^{\infty} \subset (0, \varepsilon_0)$ be a sequence such that there is a constant $C_0 \in (0,\infty),$ 
+such that $\varepsilon_L \leqq C_0 L^{-\frac{1+ \delta}{2\alpha_1+1}}, L \geqq 1.$ 
+Suppose that there are constants $ \gamma \in (0,1]$  and $C_{\gamma} \in (0, \infty)$ such that
+ $$\sup_{\Delta} \sum_{i=0}^{n-1} (t_{i+1}-t_i)){\mu} (| \sum_{m=1}^M\sum_{k:T_k\geqq t_{i+1}} (P_{T_k-t_i}^{(m)}F_{m,k})(\pi_m X(t_i,x^*)))| \leqq \theta ) \leqq C_{\gamma}\theta^{\gamma}$$
+for all $ \theta \in (0,1].$\\
+Then then there exists a constant $C_1\ \in (0,\infty)$ and $\tilde{\Omega}(L) \in \mathcal{F},$  $L\geqq 1 ,$ such that
+$$P(\tilde{\Omega}(L)) \to 1, \ L\to \infty,$$
+and
+$$
+1_{\tilde{\Omega}(L)}|\hat{c}_2(\varepsilon_L, \Delta, L)-c_{0}|
+\leqq  C_1
+(L^{-(\frac{1}{2}+ \frac{(1-\delta)}{2 \alpha_1 +1}) \frac{1+\gamma}{2+\gamma}}+|\Delta|)
+$$
+for any $L\geqq 1,$ and $\Delta \in \Pi.$
+\end{theorem}
+
+\begin{remark}\label{actual}
+Let $\tilde{\Omega}'(L)$ be
+$$ \tilde{\Omega}'(L)=\left \{\omega \in \Omega; |\hat{c}_1(\varepsilon_L,\Delta,L) - c_0 | \leqq CL^{-\frac{1-\delta}{1+\alpha_0}} \right\}.$$
+Then by Theorem \ref{main2}, we see that
+$$
+P(\tilde{\Omega}'(L)) \to 1,  L\to \infty,
+$$
+and
+$$1_{\tilde{\Omega}(L) }|\hat{c}_1(\varepsilon_L,\Delta,L)-c_0| \leqq CL^{-\frac{1-\delta}{1+\alpha_0}}.
+$$
+Theorem \ref{main1} shows that the estimation of $\hat{c}_2$ may be better than $\hat{c}_1$. 
+\end{remark}
+
+We can compute the estimators $\hat{c}_i, i=1,2,$ practically in the following way.\\  
+\noindent First, we generate a family of independent paths 
+$${\bf X}_1 = \{X_{\ell }(t); 0 \leqq t \leqq T, \ell =1,2,\ldots ,L\}.$$
+Next, by using ${\bf X}_1$, we compute
+$$(Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_m(t_i))), \text{for every}\  k \  \text{such that} \ T_k > t_i .$$
+Then our estimator $\tilde{c}_1$ is
+$$\tilde{c}_1=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} g(t_i, X_{\ell}(t_i))( \sum_{k:T_k\geqq t_{i+1}} (Q_{t_i,T_k,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X_{\ell}(t_i)))\vee0)(t_{i+1}-t_i). $$
+We used the same paths for Monte Carlo simulation and construction  of Stochastic mesh operator. 
+
+For $\tilde{c}_2$, we generate another independent family of independent paths $${\bf X}_2=\{X^{'}_{m }(t); 0 \leqq t \leqq T,  m =1,2,\ldots ,M\},$$
+and we compute 
+\begin{multline*}
+\tilde{c}_2= \frac{1}{M} \sum_{m=1}^M \sum_{i=0}^{n-1} g(t_i, X'_m(t_i)) \{ \sum_{k:T_k\geqq t_{i+1}}F_{m,k}(X_m^{'(k)}(T_k))\}\\
+ \times 1_{\{\sum_{k:T_k\geqq t_{i+1}} (Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k})(\pi_k(X^{'}_m(t_i)))) \geqq 0\}}(t_{i+1}-t_i).
+ \end{multline*}
+
+In the above computations of $\tilde{c}_1$ and $\tilde{c}_2$, we use the values of $X_{\ell}(t_i), t_i \in \Delta$, only.\\
+As for the computation of $\tilde{c}_2,$  we do not use $Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k}$ explicitly.
+We use $Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k}$ only to judge whether $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i))))>0$ or not. 
+ So the approximation has no error when the signs of  $(Q_{t,T,\varepsilon}^{(m,L,\omega)} F_{m,k})(\pi_k{X}(t)))$ and $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i)))$ are the same, even if there are large differences between them.
+
+\section{Prepareations from Malliavin Calculus}
+In this section, we prepare two types of inequalities with respect to 
+the expectation semigroup $\{P_t\}$ by using Malliavin calculus.
+One is the estimation of difference between neighbor
+$P_{T-t}(X(t))$ and $P_{T-s}(X(s))$ which is used to estimate the discretiation
+error of $c_0$. The other is the estimation of the difference between 
+$(P_{T-t}f)(X(t))$ and $f(X(T))$ where $t$ is close to $T$. It is used to estimate 
+the difference between $(Q_{t,T_k,\varepsilon}^{(m,L,\omega)}f)$ and $f$ for $t \in [T_k -\varepsilon
+, T_k].$
+\subsection{Estimation of difference of semigroup from neighbor}
+We estimate the difference of Expectation operator on two different points.
 Let us denote $\|\nabla F\|_{\infty}=\sup_{x \in {\bf R}^N}|(\frac{\partial F}{\partial x_1}(x), \ldots, \frac{\partial F}{\partial x_N}(x))|, \quad F \in C^{\infty}({\bf R}^N).$
-\begin{prop}\label{discProp}
-Let $T>0$. Then there exists a $C>0$ such that 
-\begin{align*}
-&E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*)(P_{T-s}F)(X(s,x^*)) \vee 0|]\\
-&\leqq C \|\nabla F\|_{\infty} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,
-\end{align*}
-for any $ F \in C_b^{\infty}({\bf R}^{N})$ and any $0< s < t< T$. 
-\end{prop}
 
+\begin{prop}\label{discProp}
+Let $T>0$. There exists a constant $C >0$ such that
+$$E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*))(P_{T-s}F)(X(s,x^*)) \vee 0|]$$
+$$\leqq C \|F\|_{{Lip}} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,$$
+for any $ F \in Lip({\bf R}^{N})$ and any $0< s < t< T$.
+\end{prop}
+For the Malliavin calculus, 
 we use the notation in \cite{K}.
 We have the following Lemma similarly to the proof of \cite{K} Lemma 8 (3).  
 \begin{lem} \label{rev}
@@ -612,7 +617,17 @@ we have $|\Phi(t,x)|\in {\bf D}_p^1,$ for any $p>1$. So we have the assertion.
 \qed
 \\
 
-{\it Proof of Propsition \ref{discProp}.}
+\begin{prop}
+Let $T>0$. Then there exists a $C>0$ such that 
+\begin{align*}
+&E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*)(P_{T-s}F)(X(s,x^*)) \vee 0|]\\
+&\leqq C \|\nabla F\|_{\infty} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,
+\end{align*}
+for any $ F \in C_b^{\infty}({\bf R}^{N})$ and any $0< s < t< T$. 
+\end{prop}
+
+
+{\it Proof}
 Let $\{M(t)\}_{0\leqq t \leqq T}$ be
 $$M(t) = E^{\mu}[F(X(T,x^*))|\mathcal{F}_t]=(P_{T-t}F)(X(t,x^*)).$$
 $\{M(t)\}_{0\leqq t \leqq T}$ is a $\{\mathcal{F}_t\}_{t\geqq 0}$-martingale.
@@ -691,18 +706,13 @@ $$\leqq C \|\nabla F\|_{\infty} \int_s^t (r^{-1/2} + (T-r)^{-1/2})dr.$$
 Letting $m \to \infty,$ we have our assertion.
  \qed
  
-\begin{cor}
-Let $T>0$. There exists a constant $C >0$ such that
-$$E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*))(P_{T-s}F)(X(s,x^*)) \vee 0|]$$
-$$\leqq C \|F\|_{{Lip}} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,$$
-for any $ F \in Lip({\bf R}^{N})$ and any $0< s < t< T$.
-\end{cor}
-{\it Proof.}
+{\it Proof of Propsition\ref{discProp} .}
 For $F \in Lip({\bf R}^N)$, there exists $F_m \in C_b^{\infty}({\bf R}^N), m=1, 2, \cdots, $ such that
 $\| \nabla F_m\| \leqq \|F\|_{Lip}$ and $F_m(x) \to F(x)$, for any $x \in {\bf R}^N$.
 So we obtain the result from Lemma \ref{discProp}.
 \qed
-\\
+
+\subsection{Estimation of semigroup near the maturity}
 \begin{lem}\label{discLem1}
 Let $m=1,\ldots,M,$ and $T>0.$ There exists a constant $C >0$ such that
 \begin{align}
@@ -768,23 +778,36 @@ $a_k \in {\bf R}, f_k, g_k \in  \hat{\mathcal{D}}({\bf R}^{\tilde{N}_m}), k=1,\l
 So our assertion follows from Lemma \ref{discLem1}.
  \qed
 
-{\it Proof of Proposition \ref{time disc}.}
-Let $$\tilde{F}_{k}(x)=\sum_{m=1}^M \sum_{k'=k}^K (P_{T_{k'}-T_{k}}^{(m)}F_{m,k'})(\pi_m x), k=1,\ldots,K.$$ 
-Then by Lemma \ref{discLem2}, there is a constant $C>0$ such that\\
+
+\section{Discretization error estimation}
+We define $c_{\Delta}, \Delta \in \Pi$ by
+$$c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)
+E^{\mu}[g(t_i,X(t_i,x^*))\{\sum_{m=1}^M\sum_{k; T_k \geqq t_{i+1}}^K(P_{T_k-t_i}^{(m)}F_{m,k})(\pi_mX(t_i,x^*))) \}\vee 0].
+$$
+When we set the index $i_{(k)}, k=1,\ldots, K,$ as $t_{i_{(k)}} = T_k,$
+we have the expression of $c_{\Delta}$ 
+$$
+c_{\Delta}=\sum_{k=1}^K\sum_{i=i_{(k-1)}}^{{i_{(k)}}-1}(t_{i+1}-t_i) E^{\mu}[ g(t_i,X(t_i,x^*))\{
+\sum_{m=1}^M \sum_{k'=k}^K(P_{T_k-t_i}^{(m)}F_{m, k'})(\pi_{m} X(t_i,x^*))\}\vee0 ].
+ $$
+The difference between $c_0$ and $c_{\Delta}$ is estimated as follows.
+ \begin{prop}\label{time disc}
+There exists a constant $C >0$ such that
+$$
+|c_0-c_{\Delta}| \leqq  C |\Delta|,\quad \Delta \in \Pi.$$.
+\end{prop}
+{\it Proof.}
+Let $$\tilde{F}_{k}(x)=\sum_{m=1}^M \sum_{k'=k}^K (P_{T_{k'}-T_{k}}^{(m)}F_{m,k'})(\pi_m x), k=1,\ldots,K.$$ then  the error between $c_0$ and $c_{\Delta}$ is bounded above by
 \begin{align*}
-&|c_0- c_{\Delta}| \\
- \leqq   &\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} |E^{\mu}[ g(t,X(t,x^*))\left( (P_{T_{k}-t} \tilde{F}_{k})(X(t,x^*)) \vee 0\right)] \\
--& E^{\mu}[ g(t_i,X(t_i,x^*))(P_{T_{k}-t_i} \tilde{F}_{k})(X(t_i,x^*)) \vee 0]| dt\\
-\leqq   &C\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} dt \int_{t_i}^t (r^{-1/2}+(T_k-r)^{-1/2})dr\\
+&|c_0- c_{\Delta}| \leqq   \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} dt\\
+& E^{\mu}\left[ \left |g(t,X(t,x^*)) (P_{T_{k}-t} \tilde{F}_{k})(X(t,x^*)) \vee 0
+-  g(t_i,X(t_i,x^*)) P_{T_{k}-t_i} \tilde{F}_{k} X(t_i,x^*)) \vee 0 \right| \right]
+\end{align*}
+Then by Proposition\ref{discProp}, there is a constant $C>0$ such that\\
+\begin{align*}
+&|c_0- c_{\Delta}| \leqq   C\sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1} \int_{t_i}^{t_{i+1}} dt \int_{t_i}^t (r^{-1/2}+(T_k-r)^{-1/2})dr\\
 \leqq &C|\Delta|  \sum_{k=1}^K \sum_{i=i_{(k-1)}}^{i_{(k)}-1}\int_{t_i}^{t_{i+1}} (r^{-1/2}+(T_k-r)^{-1/2})dr. 
 \end{align*}
-So we have
-$$
-|c_0- c_{\Delta}| 
-\leqq 
-C|\Delta| \sum_{k=1}^K \int_{T_{k-1}}^{T_k} (r^{-1/2}+(T_k-r)^{-1/2})dr .
-$$
-So the assertion follows.
 \qed
 
 
@@ -1339,36 +1362,54 @@ Theorem \ref{main1} follow from the Theorem \ref{convergence} and Theorem \ref{i
 \section{Numerical Example}\label{sec:nume}
 Let $\{B(t); t\geqq 0\} $ be 1-dimensional Brownian motion.
 Let $t_i = i/n, i=0,\ldots, n.$ Let $c$ be
-
-Let $X$ be a process defined by 
+Let $X$ be a following log normal process 
 \begin{align}
   X(t) = x \exp\left( - \frac{1}{2} \sigma^2 t + \sigma B(t)  \right).
 \end{align}
+We conder to compute the value of $c_0$
 \begin{align}
-  c = E\left[\int_0^T  \left(V(X(T_i)) \vee 0 \right) dt \ \right], \\
-  V(X(t)) = E\left[\ \sum_{T_i>t}F(X(T_i)) \ | \mathcal{F}_t \right]
+  c = E\left[\int_0^T  \left(V(X(T_i)) \vee 0 \right) dt \ \right],
 \end{align}
-
-
-$$c=E [\int_0^1( E[B(1)|\mathcal{F}_t]\vee0 )\ dt ]=\frac{2}{3 \sqrt{2\pi}}.$$
-Let $c_{\Delta}$ be the discretization of $c$, such that
+where 
+$$V(X(t)) = E\left[\ \sum_{T_i>t}F(T_i, X(T_i)) \ | \mathcal{F}_t \right],$$
+$F(T_i, x) = x - K,$ for any $T_i.$
+In this case, $V$ is calculated analyitcally as 
 $$
-c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)E[B(t_i)\vee0].
+V(X(t)) = \sum_{T_i>t}F(T_i, X(t)) =\sum_{T_i>t}(X(t)- K) .
 $$
-We approximate $c$  as Remark \ref{actual}, where $F(x) =x.$ Let
+Let
 ${\bf X}_1 = \{X_{\ell }(t_i); i=0,1,\ldots,n \}_{\ell=1}^L$
-be i.i.d sample paths of $\{B(t_i); i=0,1,\ldots,n\} $.
+be i.i.d sample paths of $\{X(t_i); i=0,1,\ldots,n\} $.
 We compute
  $Q_{t,T,\varepsilon}^{(L,\omega)}$ and $\hat{c}_1$ by using of paths ${\bf X}_1$.
-$$\hat{c}_1=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} (Q_{t_i,T}^{(L,\omega)}F)((X_{\ell}(t_i)))\vee0)(t_{i+1}-t_i). $$
+ $$\hat{c}_{explicit}=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} \left(\sum_{T_k>t} Q_{t_i,T_k}^{(L,\omega)}F(T_k, \cdot)(X_{\ell}(t_i))\right)\vee0)(t_{i+1}-t_i). $$
 Let ${\bf X}_2 = \{X'_{\ell }(t_i); i=0,1,\ldots,n \}_{\ell=1}^L$
-be another i.i.d sample paths of $\{B(t_i); i=0,1,\ldots,n\} $.
-We compute $\hat{c}_2$ by 
- $$\hat{c}_2= \frac{1}{L_0} \sum_{\ell_0=1}^{L_0} \sum_{i=0}^{n-1} \{ F(X_{\ell_0}^{'}(T))\}
- 1_{\{(Q_{t,T}^{(L,\omega)}F)(X^{'}_{\ell_0}(t_i)) \geqq 0\}}(t_{i+1}-t_i).$$ 
-We have $c\approx 0.2659615203.$ When we take $n = 100,$ we have $c_{\Delta}\approx 0.2638855365.$ 
-We also take $L_0=10000$ and $L=100, 200, 400, 800, 1600, 3200, 6400.$ 
-We replicate 100 estimators of $\hat{c}_i, i=1,2$ for each $L$. Let "Average $i$" denote the average and "Standard Dviation $i$" denote
+be another i.i.d sample paths of $\{X(t_i); i=0,1,\ldots,n\} $.
+We compute $\hat{c}_{implicit}$ by 
+$$\hat{c}_{implicit}= \frac{1}{L_0} \sum_{\ell_0=1}^{L_0} \sum_{i=0}^{n-1} \{ \sum_{T_k>t}F(T_k, X_{\ell_0}^{'}(T_k))\}
+1_{\left\{\sum_{T_k>t} Q_{t_i,T_k}^{(L,\omega)}F(T_k, \cdot)(X^{'}_{\ell_0}(t_i)) \geqq 0\right\}}(t_{i+1}-t_i).$$ 
+Let $c_{\Delta}$ be the discretization of $c$, such that
+$$
+c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)E[V(X(t_i))\vee0].
+$$
+We regard $\hat{c}_{\Delta}$ as true value.
+$$
+\hat{c}_{\Delta} = \frac{1}{L_0} \sum_{\ell_0=1}^{L_0} \sum_{i=0}^{n-1} \left(\{ \sum_{T_k>t}F(T_k, X_{\ell_0}^{'}(t_i))\}\vee 0\right)
+(t_{i+1}-t_i).
+$$
+Parameters are following.
+\begin{itemize}
+    \item $x = 100.$
+    \item $\sigma = 0.3.$
+    \item $T=1.0.$
+    \item $L_0=10000.$ 
+    \item $L=1000, 2000, 5000, 10000.$ 
+    \item $t_i = 0.1 \times i, \ i = 1, \dots, 100.$
+    \item $T_k = 0.2 \times k, \ k = 1, \dots, 5.$ 
+\end{itemize}
+We have $\hat{c}_{\Delta}\approx 620.67633265205791.$ 
+We also take $L_0=10000$ and $L=1000, 2000, 5000, 10000.$ 
+We replicate 10 estimators of $\hat{c}_i, i=1,2$ for each $L$. Let "Average $i$" denote the average and "Standard Dviation $i$" denote
  the unbiased standard deviation of these 100 estimators of $\hat{c}_i, i=1,2.$ We show the numerical result in Table \ref{nume}, 
 we show graph of "Average $i, i = 1,2$" and $c_{\Delta}$ in Figure \ref{fig1} and graph of "Standard Deviation $i, i=1,2$" in Figure \ref{fig2}.
 \noindent 
