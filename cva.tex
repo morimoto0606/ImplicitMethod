@@ -31,10 +31,9 @@
 %\newtheorem{example}[thm]{Example}
 
 
-
 \begin{document}
-\title{Explicit and Implicit American Monte Carlo Methods 
-for Portfolio wise Non Linear Computation}
+\title{Implicit American Monte Carlo Methods
+for Nonlinear Functional of Future Portfolio Value}
 
 \author{
 Yusuke MORIMOTO
@@ -45,11 +44,14 @@ Bank of Tokyo Mitsubishi UFJ }
 
 \maketitle
 \begin{abstract}
-We introduce two types of numerical compuation algorithms for portfolio wise non linear 
-expectaion such as XVA. They are based on American Monte Carlo methods and we call each algorithm as Explicit and Implicit methods.
-In this paper, we propose the efficiency
-of Implicit method by showing theoritical convergence order and numerical simulation. 
-We use the Stochastic mesh methods as an typical example of American monte carlo methods.
+We introduce a new approximation algorithm for
+nonlinear functional of future portfolio value.
+We call it as ``Implicit Method" in contrast with calling existing method 
+as ``Explicit method".
+In this paper, we show both ``Implicit" and ``Explicit" algorithms converge to true value
+with combining Stochastic mesh which is an typical example of American Monte Carlo methods.
+And we show the efficiency of ``Implicit Method" through
+the theoretical convergence order and numerical simulation.
 \end{abstract}
 
 JEL classification:C63, G12
@@ -59,163 +61,121 @@ stochastic mesh method, XVA
 
 \section{Introduction}
 
-In various situation in financial practice, calculation of following type of non-linear expectation for a portfolio is often needed.
+In various situations in financial practice, computing following type of nonlinear functional 
+of future portfolio values is often needed.
 \begin{align}\label{eq:C0}
-    C_0 = E^{\mu}\left[\int_{0}^T g(t, X(t))\left\{V(t) \vee0 \right \} \ dt \right],
+    c_0 = E^{\mu}\left[\int_{0}^T g(t, X(t))\left\{V(t) \vee0 \right \} \ dt \right],
 \end{align}
-where $(\Omega, \mathcal{F}, \{\mathcal{F}_t\}_{t\in [0,T]}, \mu)$ is a filtered probability space, $X$ is a underlying state process, $V(t)$ is the portfolio value of future date $t$, $T$ is the final maturity
+where $(\Omega, \mathcal{F}, \{\mathcal{F}_t\}_{t\in [0,T]}, \mu)$ is a filtered probability space, $X$ is a multi dimensional underlying stochastic process, $V(t)$ is the portfolio value of future date $t$, $T$ is the final maturity
 of all trades in the portfolio, and $g(t, x)$ is a non negative deterministic function with respect to time and state space.\\
-In case that portfolio is composed of Eurean derivatives, $V(t)$ is expressed as
+In case that portfolio is composed of European derivatives, $V(t)$ is expressed as
 \begin{align}\label{eq:V}
   V(t) =  E^{\mu} \left[ \sum_{k:T_k\geqq t}F_k\left({X}(T_k)\right) |\mathcal{F}_t \right],
 \end{align}
-where $X$ is underlying stochastic process and $\{F_k\}$ are deterministic functions corresponding to the payoffs of European derivatives in the portfolio.\\
-To calculate $C_0$, we usually need a lot of computational resources for the following reasons.
-\begin{enumerate}
-    \item \label{item1} Monte Carlo simulation is often used for the general computation 
-        framework which can compute various type products contained in the portfolio. 
-        Conditonal expectation of equation $(\ref{eq:V})$ is needed for all $t \in [0, t]$.
-        If we chose naive monte carlo simulation, iteration number of monte carlo 
-        simulation is multiplied.
-    \item \label{item2} 
-        Dimension of $X$ mitht be high when there are a lot of assets in the portflio. 
-        If there is a linearity in the expectaiton, the problem is reduced to the
-        low dimensional problem. Du to the non-linearity in te equation (\ref{eq:C0}),
-        we must deal with high dimensional computaion problem.
-        non-linearity in te equation (\ref{eq:C0}).
-\end{enumerate}
-To deal with the problem \ref{item1}, American Monte carlo method is usually used (see \cite{G}).
-In the American Monte Carlo method, $V(t)$ is approximated by $\tilde{V}(t)$ which is rough but low computational cost estimation instead of naive monte carlo estimation.
-We obtaion approximation of $C_0$ by substituting $V(t)$ by $\tilde{V}(t)$.
-We call it "expicit method" which is denoted by $C_{\text{explicit}}$
+where $X$ is underlying stochastic process and $\{F_k\}$ are deterministic functions corresponding to the payoffs of European derivatives in the portfolio.
+
+Calculation of $c_0$ is, in general, a high dimensional numerical computation problem
+since there are many assets in the portfolio.
+Hence, it is generally performed by Monte Carlo simulation.
+However, $c_0$ calculation is generally more difficult than usual Monte Carlo 
+simulation wich is, for example, used to calclate derivative prices and portfolio values.
+What makes $c0$ calculation difficult is result in
+the nonlinear functional of future portfolio value in the equation (\ref{eq:C0}).
+Future portfolio value $V(t)$ is expressed by the conditional expectation as 
+equation (\ref{eq:V}) and we need to evaluate it on each state of simulation path.
+If we chose naive Monte Carlo simulation to evaluate conditional
+expectation, multi iterated Monte Carlo simulation is needed and it takes huge computational costs.
+To address with this problem, American Monte Carlo method is usually used (\cite{G}).
+In the American Monte Carlo method, $V(t)$ is approximated by $\tilde{V}(t)$ which is rough 
+but obtained with low computational cost instead of naive Monte Carlo estimation.
+Then $c_0$ is approximated by substituting $V(t)$ by $\tilde{V}(t)$ and this approximation
+is widely used in practice.
+We call this existing approximation method as ``Explicit method" which is denoted by 
 \begin{align}
-    C_{\text{explicit}}=E^{\mu}\left[\int_{0}^T g(t, X(t))\left\{\tilde{V}(t) \vee0 \right \} \ dt \right].
+    c_{\text{explicit}}=E^{\mu}\left[\int_{0}^T g(t, X(t))\left\{\tilde{V}(t) \vee0 \right \} \ dt \right].
 \end{align}
-On the other hand, we have the other expression of $C_0$ as follows.
+On the other hand, we have the other expression of $c_0$ as follows.
 \begin{align}\label{eq:implicit}
-  C_0 &= E^{\mu}\left[\int_{0}^T g(t, X(t)) \left\{ \sum_{k:T_k\geqq t} E^{\mu} \left[ F_k({X}(T_k)) |\mathcal{F}_t \right]\right \} 1_{\{V(t) \geqq 0\}}\ dt \right]\nonumber \\
+  c_0 &= E^{\mu}\left[\int_{0}^T g(t, X(t)) \left\{ \sum_{k:T_k\geqq t} E^{\mu} \left[ F_k({X}(T_k)) |\mathcal{F}_t \right]\right \} 1_{\{V(t) \geqq 0\}}\ dt \right]\nonumber \\
       &=E^{\mu}\left[\int_{0}^T  g(t, X(t)) \left\{ \sum_{k:T_k\geqq t} F_k({X}(T_k)) 1_{\{V(t) \geqq 0\}}\right \} \ dt \right].
 \end{align}
-In this expression $V(t)$ is appeared only in the indicator function. Then only the sign of
-$V(t)$ affects for the approximation accracy. In other words, how large the the difference between
-$\tilde{V}$ and $V$ exists, there is no approximation error as long as the sign of $V$ and $\tilde{V}$are the same.
-We call approximation by using equation(\ref{eq:implicit}) as "Implicit method" which is denoted by $C_{\text{implicit}}$.
+In this expression, $V(t)$ is appeared only in the indicator function. It means only 
+the sign of
+$V(t)$ affects for the approximation accuracy. In other words, how large difference 
+threre is between
+$\tilde{V}$ and $V$ exists, there is no approximation error as long as the sign
+of $V$ and $\tilde{V}$are the same.
+We can approximate $c_0$ based on the equation(\ref{eq:implicit}). 
+We call this new approximation method as ``Implicit method" which is denoted by 
 \begin{align}
-    C_{\text{implicit}}=E^{\mu}\left[\int_{0}^Tg(t, X(t)) \left\{ \sum_{k:T_k\geqq t} F_k({X}(T_k)) 1_{\{V(t) \geqq 0\}}\right \} \ dt \right].
+    c_{\text{implicit}}=E^{\mu}\left[\int_{0}^Tg(t, X(t)) \left\{ \sum_{k:T_k\geqq t} F_k({X}(T_k)) 1_{\{\tilde{V}(t) \geqq 0\}}\right \} \ dt \right].
 \end{align}
-In this paper we show two algorithms of approximation of $C_0$ based on "explicit method" and 
-"implicit method" and obtain the error estimation which includes both Monte Carlo error and
-discretization error.
-Least square monte carlo is more popular in plactice for its general algorithm and
-less computational cost.
-On the other hand, although it is only applicable to underlying path whose transition density function is  explicitly known, stochastic mesh method has accurate estimation(see \cite{KM}).
-In this paper, we use stochastic mesh method for this reasons.
 
-To deal with the second problem, we focus on the detail of payoffs and underlyings.
-The payoff of each derivative usually depends on a small number of assets.
-Let $$F(T_k, X(T_k) = \sum_{m=1}^M \tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
-Let $X^{(m)}(t)$ be ${\bf R}^{N_m}$-valued
-stochastic processes $, m=0, 1, \ldots, M.$ and $X(t)=(X^{(0)}(t),\ldots, X^{(M)}(t))$ is an underlying process. 
-We consider the model that the macro factor is determined by $X^{(0)}(t),$ and the payoff of each derivative at maturity $T_k, k=1,\ldots,K,$ is the form of
-$$\sum_{m=1}^M \tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
+In this paper we propose two approximation algorithms of $c_0$ based on
+``Explicit" and ``Implicit" American Monte Carlo methods.
+We show theoretically both approximations converge to true value
+and obtain their convergence orders.
+When we consider a concrete $c_0$ approximation algorithm, 
+we should chose which American Monte Carlo algorithm to use because 
+American Monte Carlo methods is just the name of frame work.
+Least square Monte Carlo method (LSM) is the most popular algrorithm in American 
+Monte Carlo methos in practice for its flexibility
+and high computational performance. 
+On the other hand, there is a stochastic mesh method as an alternative American Monte
+Carlo methods. Although Stochastic mesh method is only applicable to the limited case that 
+underlying path has analytically tractable transition density function,
+it has mathematically accurate error estimation(\cite{KM}).
+Hence our algorithms proposed in this paper are based on stochastic mesh method for 
+the purpose to show theoretical error estimation.
+On the other hand, althoug we do not discuss the efficiency in this paper,
+we can make algorithms based on LSM instead of Stochastic mesh.
+
+We also explain our technique to reduce the dimension of American Monte Carlo Methods.
+We assume that the $F_k(X(T_k))$ is the form of 
+$$F_k(X(T_k)) = \sum_{m=1}^M {F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)),$$
 where
-$$V_0(t) =E[ \sum_{k; T_k \geqq t}\sum_{m=1}^M F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
-and $F_{m,k}$ is a function such as 
-$$F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))=D(0,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
-Then
-One of the most important exmaple of this prblem is XVA.
-XVA is obtained as .
-\begin{align}
-\text{CVA}&= E[L(\tau)D(0,\tau)1_{\{\tau <T\}}(\tilde{V}_0(\tau)\vee 0)] \nonumber\\
-&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)D(0,t) (\tilde{V}_0(t) \vee 0)  dt ] \nonumber\\
-&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t) (V_0(t) \vee 0)  dt ] \label{defCVA},
+$X(t)=(X^{(0)}(t),\ldots, X^{(M)}(t)).$ 
+This assumption based on the fact that, in practice, each derivative payoff
+depends on common macro factors such as interest rate and only a few assets. 
+Then the equation (\ref{eq:V}) is written by
+\begin{align}\label{eq:V2}
+    V(t) =  &\sum_{k:T_k\geqq t} \sum_{m=1}^M  V_m(t), \\
+    V_m(t)= &E^{\mu}\left[ {F}_{m,k}\left(X^{(0)}(T_k), X^{(m)}(T_k) \right) |\mathcal{F}_t \right].
 \end{align}
-where
-$$V_0(t) =E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
-and $F_{m,k}$ is a function such as 
-$$F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))=D(0,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
-Since $L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)$ is a function of $X(t),$ we denote it by $g(t,X(t)).$ Then CVA is given by the following form. 
+Hence, we can approximate $V$ by approximating each $V_m, m = 1, \dots, M.$ 
+It reduce the dimension of American Monte Carlo Methods from dimension of $X$
+to dimension of $(X_0, X_m), m = 1,\dots, M.$ 
 
-
-
-With regard to the meaning of $C_0$
-For example CVA is expressed by 
-
-$$\text{CVA}= E^Q[L(\tau)D(0,\tau)1_{\{\tau <T\}}V_0(\tau)_{+}]$$ $$=E^{Q}[\int_0^T L(t)D(0,t) V_0(t)_{+} \lambda(t) dt ]  .$$
-where $$V_0(t) = \sum_{k:T_k\geqq t} E^{Q}[D(t,T) f_k(X^{(k)}) |\mathcal{F}_t].$$
- 
-
- where $X=(X^{(1)}, \ldots, X^{(K)})$ be underlying multi assets process. $f_k, k=1,\ldots K$ be the pay off of derivative contract between one counter party. Let $Q$ be a 
-
- In this paper, we assume that there exists a state process $X^{(0)}$ such that $D(t,T), \lambda(t),
-L(t)$ is represented by $X^{(0)}$, and payoff at $T_k$ depend on only $X^{(0)}$ and small number of 
-assets $X^{(k)}$l, where $X=(X^{(1)}, \ldots, X^{(K)})$.
-
-\section{Introduction}
-The credit valuation adjustment (CVA) is, by definition, the difference
+One of the most important value expressed as $c_0$ is XVA.
+It is a general term of derivative value adjustment.
+The typical XVA is Credit Valuation Adjustment(CVA).
+it is the difference
 between the risk-free portfolio value and the true portfolio value that takes into account
-default risk of the counterparty. In other words, CVA is the market value of counterparty credit risk.
-After the financial crisis in 2007-2008, it has been widely recognized that even major financial institutions may default.
-Therefore, the market participants has become fully aware of counterparty credit risk.
-In order to reflect the counterparty credit risk in the price of over-the-counter (OTC) derivative transactions,
-CVA is widely used in the financial institutions today.
-
-Although Duffie-Huang \cite{DU} has already introduced the basic idea of CVA  in 1990's, 
-several people reconsidered the theory of CVA related to collateralized derivatives (cf. \cite{FT}) and 
-also efficient numerical calculation methods appeared(cf. \cite{H}).
-
-There are two approaches to measuring CVA: unilateral and bilateral (cf. \cite{Gre}). 
-Under the unilateral approach, it is assumed that the bank that does
-the CVA analysis is default-free.
-CVA measured in this way is the current market value of future losses due to the counterparty's potential
-default. The problem with unilateral CVA is that both the bank and the counterparty require a
-premium for the credit risk they are bearing and can never agree on the fair value of the trades in
-the portfolio. Therefore, we have to consider not only the market value of the counterparty's default risk, but also the bank's own counterparty credit risk
-called debit value adjustment (DVA) in order to calculate the correct fair value. 
-Bilateral CVA (it is calculated by netting unilateral CVA and DVA) takes into account the possibility of both the counterparty default and the own default.
-It is thus symmetric between the own company and the counterparty, and results in an
-objective fair value calculation.
-
-Mathematically, unilateral CVA and DVA are calculated in the same way, and bilateral CVA is the difference of them. So we focus on the calculation of 
-unilateral CVA in this paper.
-
-CVA is measured at the counterparty level and there are many assets in the portfolio generally.
-Therefore, we have to be involved in the high dimensional numerical problem to obtain the value of CVA.
-This is one of the reasons why CVA calculation is difficult.
-On the other hand, each payoff usually depends only on a few assets.
-We will focus on this property and suggest an efficient calculation methods of CVA 
-in the present paper.
-
-Let us consider the portfolio consist of the contracts on one counterparty. 
-Let $X^{(m)}(t)$ be ${\bf R}^{N_m}$-valued
-stochastic processes $, m=0, 1, \ldots, M.$ We think that $X(t)=(X^{(0)}(t),\ldots, X^{(M)}(t))$ is an underlying process. 
-We consider the model that the macro factor is determined by $X^{(0)}(t),$ and the payoff of each derivative at maturity $T_k, k=1,\ldots,K,$ is the form of
-$$\sum_{m=1}^M \tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
-Let $T=T_K$ be the final maturity of all the contracts in the portfolio. Let $\tau$ be the default time of the counterparty, $\lambda(t)$ be its 
-hazard rate process, $L(t)$ be the process of loss when the default takes place at time $t$, and $D(t,T)$ be the discount factor process from $t$ to $T$.
-We assume that $D(0,t)$ is the function of $X^{(0)}(t)$ and that $L(t), \lambda(t)$ and $\exp(-\int_0^t \lambda(s)ds )$ are the function of $X(t).$   
-
-Let $\tilde{V}_0(t)$ be total value of all contracts in the portfolio at time $t$ under the assumption that counterparty is default free. Then $\tilde{V}_0(t)$ is given by 
-$$\tilde{V}_0(t) =E[\sum_{m=1}^M \sum_{k; T_k \geqq t}D(t,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
-where $E$ denotes the expectation with respect to the risk neutral measure.
-Then unilateral CVA on this portfolio is the restructuring cost when the counterparty
-defaults.
-So unilateral CVA is given by
+default risk of the counterparty. CVA is roughly expressed as follows.
 \begin{align}
-\text{CVA}&= E[L(\tau)D(0,\tau)1_{\{\tau <T\}}(\tilde{V}_0(\tau)\vee 0)] \nonumber\\
-&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)D(0,t) (\tilde{V}_0(t) \vee 0)  dt ] \nonumber\\
-&=E[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t) (V_0(t) \vee 0)  dt ] \label{defCVA},
+    & \text{CVA}=E^{\mu}\left[\int_0^T L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t) (V(t) \vee 0)  dt \right],\\
+    &V(t) =E^{\mu} \left[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t\right],
 \end{align}
-where
-$$V_0(t) =E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t],$$
-and $F_{m,k}$ is a function such as 
-$$F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))=D(0,T_k)\tilde{F}_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)).$$
-Since $L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t)$ is a function of $X(t),$ we denote it by $g(t,X(t)).$ Then CVA is given by the following form. 
-\begin{align}
-\text{CVA}&=E[\int_0^T g(t,X(t))  (E[\sum_{m=1}^M \sum_{k; T_k \geqq t}F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k)) | \mathcal{F}_t] \vee 0)  dt ] \label{defCVA2}.
-\end{align}
+where $\lambda(t)$ denotes a counterparty' hazard rate, $L(t)$ denotes a
+loss give default, and $F_{m,k}(X^{(0)}(T_k), X^{(m)}(T_k))$ denotes a discounted 
+payoff at $T_k$.
+Then, setting $g$ as 
+$$ g(t,X(t)) = L(t)\exp(-\int_0^t \lambda(s)ds ) \lambda(t).$$
+CVA calculation is actually reduced to the calculation of $c_0.$
 
-\section{Main Results}
+This paper is composed as follows.
+We prepare mathematical setting and show main result in section\ref{sec:main}.
+Through following section \ref{sec:mall}, \ref{sec:disc}, 
+\ref{sec:sm} and \ref{sec:proof}, we prove the main result. 
+The proof consists of 
+discretization error estimation discussed in section \ref{sec:disc}
+and stochastic mesh operator estimation discussed in \ref{sec:sm}.
+And in both section \ref{sec:disc} and section \ref{sec:sm}, we use 
+the result by using Malliavin Calculus which is prepared in section \ref{sec:mall}.
+Finally we show the numerical results in section\ref{sec:nume}.
+
+
+\section{Main results}\label{sec:main}
 \subsection{Setting for underlying process}
 Now we prepare the mathematical setting. 
 Let $M \geqq 1$ be fixed, ${N}_{m} \geqq 1, m=1, \cdots, M$, 
@@ -538,8 +498,8 @@ As for the computation of $\tilde{c}_2,$  we do not use $Q_{t,T,\varepsilon}^{(m
 We use $Q_{t,T,\varepsilon}^{(m,L,\omega)}F_{m,k}$ only to judge whether $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i))))>0$ or not. 
  So the approximation has no error when the signs of  $(Q_{t,T,\varepsilon}^{(m,L,\omega)} F_{m,k})(\pi_k{X}(t)))$ and $(P^{(k)}_{T_k-t} F_{m,k})(\pi_k(X^{'}_m(t_i)))$ are the same, even if there are large differences between them.
 
-\section{Prepareations from Malliavin Calculus}
-In this section, we prepare two types of inequalities with respect to 
+ \section{Estimation of semigroup}\label{sec:mall}
+ In this section, we prepare two types of inequalities with respect to 
 the expectation semigroup $\{P_t\}$ by using Malliavin calculus.
 One is the estimation of difference between neighbor
 $P_{T-t}(X(t))$ and $P_{T-s}(X(s))$ which is used to estimate the discretiation
@@ -547,23 +507,42 @@ error of $c_0$. The other is the estimation of the difference between
 $(P_{T-t}f)(X(t))$ and $f(X(T))$ where $t$ is close to $T$. It is used to estimate 
 the difference between $(Q_{t,T_k,\varepsilon}^{(m,L,\omega)}f)$ and $f$ for $t \in [T_k -\varepsilon
 , T_k].$
-\subsection{Estimation of difference of semigroup from neighbor}
-We estimate the difference of Expectation operator on two different points.
-Let us denote $\|\nabla F\|_{\infty}=\sup_{x \in {\bf R}^N}|(\frac{\partial F}{\partial x_1}(x), \ldots, \frac{\partial F}{\partial x_N}(x))|, \quad F \in C^{\infty}({\bf R}^N).$
+\subsection{Prepareations for Malliavin Calculus}
+We prepare brief introduction of Malliavin Calculus.
+For the detail of Malliavin calculus, refere to \cite{K}.
+Let $(W_0, \mathcal{F}, \mu)$ be a Wiener space as defined in
+section \ref{sec:main}. Let $H$ be the associate Cameron Martin Space,
+For the detail of Malliavin calculus, we use the notation in \cite{K}.
+${\bf D}^r_p(E),
+r \in {\bf R}, p \in (1, \infty)$ be Watanabe-Sovolev space, i.e. ${\bf D}^r_p
+(E)= (1-L)^{-r/2}(L^p(W_0,;E \mu))$, for any separable Hilbert space $E$.
+When $E={\bf R},$ we simply write ${\bf D}^r_p$. Let $D$ denote the the differential operator
+in the sense of Malliavin. Then $D$ is a bounded linear operator from ${\bf D}^r_p(E)$
+to ${\bf D}^r_p(E\otimes H)$. Let $D^*$ denote the adjoint operator of $D$.
+Let $J_i^j(t, x)= \frac{\partial}{\partial x^i}X^j(t,x)$. Then for $C_b^{\infty
+}$ vector field $w$ on ${\bf r}^n$ it follws that
+$$d\left(J(t)^{-1}W(X(t, x))\right)=\sum_{i=0}^d J(t)^{-1}[V_i, W](X(t, x)) \circ dB^i(t).$$
+Then there exists a process $a_{\alpha}^{\beta}, \alpha, \beta \in \mathcal{A}^*_{\leqq \ell_0}$ which satisfies 
+$$d(J(t)^{-1}V_{[\alpha]}X(t, x))=\sum_{\beta \in \mathcal{A}^*_{\leqq \ell_0}}
+a_{\alpha}^{\beta}(t, x) V_{[\alpha]} (X(t, x))\circ dB^i(t).$$
+Let $k^{\alpha}: [0, \infty) \times {\bf R}^N \times W_0 \to H$ be given by
+$$
+(k^{\alpha}(t, x), h)_H  = \left(\int_0^t h^{'}(t) a_i^{\alpha} (s, x) ds\right)_{i=1, \dots d},
+(t, x) \in [0, \infty)\times {\bf R}^N, h \in H.
+$$
+Let $D^{(\alpha)}$ be defined by
+$$
+(D^{(\alpha)}u)(t, x) = (Du(t, x), k^{(\alpha)})_H, \ \Phi \in {\bf D}_{\infty-}^1, 
+\alpha \in \mathcal{A}^*_{\leqq \ell_0}.
+$$
+Let $M^{\alpha, \beta}(t, x), (t, x) \in [0, \infty) \times {\bf R}^N, \alpha, \beta \in \mathcal{A}^*_{\leqq \ell_0}$ be given by
+$$
+M^{\alpha, \beta}(t, x) = t^{-(\|\alpha\|+ \|\beta\|)/2} (k^{(\alpha)}(t,x), k^{(\beta)}(t,x))_H.
+$$
 
-\begin{prop}\label{discProp}
-Let $T>0$. There exists a constant $C >0$ such that
-$$E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*))(P_{T-s}F)(X(s,x^*)) \vee 0|]$$
-$$\leqq C \|F\|_{{Lip}} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,$$
-for any $ F \in Lip({\bf R}^{N})$ and any $0< s < t< T$.
-\end{prop}
-For the Malliavin calculus, 
-we use the notation in \cite{K}.
 We have the following Lemma similarly to the proof of \cite{K} Lemma 8 (3).  
 \begin{lem} \label{rev}
 For any $\Phi \in {\bf D}_{\infty-}^1, \alpha \in \mathcal{A}^*_{\leqq \ell_0},$ let
-$$(D^{(\beta)} \Phi)(t,x)=(D \Phi(t,x), k^{\beta}(t,x))_H$$
-and
 \begin{align*}
 \Phi_{\alpha}(t,x)=&\sum_{\beta \in \mathcal{A}^*_{\leqq \ell_0}} t^{-\|\alpha\| / 2}\{ -D^{(\beta)} \Phi(t,x)M_{\alpha \beta}^{-1}(t,x) \\
 &-(\sum_{\gamma_1 \gamma_2 \in \mathcal{A}^*_{\leqq \ell_0}} \Phi(t,x) M_{\alpha \gamma_1}^{-1}(t,x)) D^{(\beta )}
@@ -616,6 +595,18 @@ Because $D: {\bf D}_p^1\to L^p(W_0,\mathcal{L}_{(2)}^1(H;{\bf R}))$ is a closed 
 we have $|\Phi(t,x)|\in {\bf D}_p^1,$ for any $p>1$. So we have the assertion.
 \qed
 \\
+
+
+\subsection{Estimation of the difference of semigroup between the two points}
+We estimate the difference of Expectation operator two different points.
+Let us denote $\|\nabla F\|_{\infty}=\sup_{x \in {\bf R}^N}|(\frac{\partial F}{\partial x_1}(x), \ldots, \frac{\partial F}{\partial x_N}(x))|, \quad F \in C^{\infty}({\bf R}^N).$
+
+\begin{prop}\label{discProp}
+Let $T>0$. There exists a constant $C >0$ such that
+$$E[|g(t,X(t,x^*))(P_{T-t}F)(X(t,x^*)) \vee 0 - g(s,X(s,x^*))(P_{T-s}F)(X(s,x^*)) \vee 0|]$$
+$$\leqq C \|F\|_{{Lip}} \int_{s}^t(r^{-1/2}+(T-r)^{-1/2})dr ,$$ for any $ F \in Lip({\bf R}^{N})$ and any $0< s < t< T$.  
+\end{prop} 
+
 
 \begin{prop}
 Let $T>0$. Then there exists a $C>0$ such that 
@@ -779,7 +770,7 @@ So our assertion follows from Lemma \ref{discLem1}.
  \qed
 
 
-\section{Discretization error estimation}
+ \section{Discretization error estimation}\label{sec:disc}
 We define $c_{\Delta}, \Delta \in \Pi$ by
 $$c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)
 E^{\mu}[g(t_i,X(t_i,x^*))\{\sum_{m=1}^M\sum_{k; T_k \geqq t_{i+1}}^K(P_{T_k-t_i}^{(m)}F_{m,k})(\pi_mX(t_i,x^*))) \}\vee 0].
@@ -811,7 +802,7 @@ Then by Proposition\ref{discProp}, there is a constant $C>0$ such that\\
 \qed
 
 
-\section{Property of Stochastic Mesh Operator}
+\section{Property of Stochastic Mesh Operator}\label{sec:sm}
 \subsection{Prepareations}
 We introduce basic properties and estimations about stochastic mesh operator
 discussed in \cite{KM}.
@@ -930,7 +921,6 @@ for any $t \in (0, T_k-\varepsilon], \quad k=1,\ldots,K.$ and $L \geqq 1.$
 {\it Proof.}
 See  Proposition 21 of \cite{KM}.
 \qed \\
-
 
 
 \subsection{Error estimation of Stochastic mesh operator}
@@ -1147,7 +1137,7 @@ We have the followings similarly.
 So we obtain (\ref{sum2}).
 \qed 
 
-\section{Proof of Theorem \ref{main2} and Theorem \ref{main1}}
+\section{Proof of Theorem \ref{main2} and Theorem \ref{main1}}\label{sec:proof}
 \begin{thm} \label{convergence}
 There exists a constant $C >0$ such that
 $$E^P[|\hat{c}_1(\varepsilon_L,\Delta,L)-c_{\Delta}|] \leqq C\left( L^{-(1-\delta)/2}  \hat{e}\left(\varepsilon, (1+\delta)(\tilde{N}+1)\ell_0/4 \right) + \varepsilon^2\right), L\geqq 1.$$
@@ -1360,128 +1350,97 @@ Theorem \ref{main1} follow from the Theorem \ref{convergence} and Theorem \ref{i
 \end{cor}
 
 \section{Numerical Example}\label{sec:nume}
+\subsection{Computaion target}
 Let $\{B(t); t\geqq 0\} $ be 1-dimensional Brownian motion.
 Let $t_i = i/n, i=0,\ldots, n.$ Let $c$ be
 Let $X$ be a following log normal process 
 \begin{align}
   X(t) = x \exp\left( - \frac{1}{2} \sigma^2 t + \sigma B(t)  \right).
 \end{align}
-We conder to compute the value of $c_0$
+We consider to compute the value of $c_0$
 \begin{align}
-  c = E\left[\int_0^T  \left(V(X(T_i)) \vee 0 \right) dt \ \right],
+    c_0 = E\left[\int_0^T  \left(V(X(t)) \vee 0 \right) dt \ \right]
+    =\int_0^T E(t) dt,
 \end{align}
 where 
-$$V(X(t)) = E\left[\ \sum_{T_i>t}F(T_i, X(T_i)) \ | \mathcal{F}_t \right],$$
-$F(T_i, x) = x - K,$ for any $T_i.$
+$$V(X(t)) = E\left[\sum_{T_i>t}F_i(X(T_i)) \ | \mathcal{F}_t \right],$$
+    $$E(t) = E\left[ V(X(t))\vee 0 \right ],$$
+$F_i(x) = x - K,$ for any $T_i.$
 In this case, $V$ is calculated analyitcally as 
 $$
-V(X(t)) = \sum_{T_i>t}F(T_i, X(t)) =\sum_{T_i>t}(X(t)- K) .
+V(X(t)) = \sum_{T_i>t}Fi(X(t)) =\sum_{T_i>t}(X(t)- K) .
 $$
+\subsection{Numerical algorithms}
 Let
-${\bf X}_1 = \{X_{\ell }(t_i); i=0,1,\ldots,n \}_{\ell=1}^L$
+${\bf x}_1 = \{X_{\ell }(t_i); i=0,1,\ldots,n \}_{\ell=1}^L$
 be i.i.d sample paths of $\{X(t_i); i=0,1,\ldots,n\} $.
 We compute
  $Q_{t,T,\varepsilon}^{(L,\omega)}$ and $\hat{c}_1$ by using of paths ${\bf X}_1$.
- $$\hat{c}_{explicit}=\frac{1}{L} \sum_{\ell=1}^L \sum_{i=0}^{n-1} \left(\sum_{T_k>t} Q_{t_i,T_k}^{(L,\omega)}F(T_k, \cdot)(X_{\ell}(t_i))\right)\vee0)(t_{i+1}-t_i). $$
+ $$E_{\text{explicit}}(t_i)= \frac{1}{L} \sum_{\ell=1}^L \left\{
+     \left(\sum_{T_k>t_i} (Q_{t_i,T_k}^{(L,\omega)}F_k) (X_{\ell}(t_i))\right)\vee0 \right \}$$
+     $$\hat{c}_{explicit}=  \sum_{i=0}^{n-1} (t_{i+1}-t_i) E_{\text{explicit}}(t_i). $$
 Let ${\bf X}_2 = \{X'_{\ell }(t_i); i=0,1,\ldots,n \}_{\ell=1}^L$
 be another i.i.d sample paths of $\{X(t_i); i=0,1,\ldots,n\} $.
-We compute $\hat{c}_{implicit}$ by 
-$$\hat{c}_{implicit}= \frac{1}{L_0} \sum_{\ell_0=1}^{L_0} \sum_{i=0}^{n-1} \{ \sum_{T_k>t}F(T_k, X_{\ell_0}^{'}(T_k))\}
-1_{\left\{\sum_{T_k>t} Q_{t_i,T_k}^{(L,\omega)}F(T_k, \cdot)(X^{'}_{\ell_0}(t_i)) \geqq 0\right\}}(t_{i+1}-t_i).$$ 
+We compute $\hat{c}_{implicit}$ by
+$$E_{\text{implicit}}(t_i) = \frac{1}{L_0} \sum_{\ell_0=1}^{L_0}
+\left\{ \sum_{T_k>t_i}
+F_k(X_{\ell_0}^{'}(T_k)) \right\}
+1_{\left\{\sum_{T_k>t_i} (Q_{t_i,T_k}^{(L,\omega)}F_k)(X^{'}_{\ell_0}(t_i)) \geqq 0\right\}}$$
+$$\hat{c}_{implicit}=  \sum_{i=0}^{n-1} (t_{i+1}-t_i)E_{\text{implicit}}(t_i) .$$ 
 Let $c_{\Delta}$ be the discretization of $c$, such that
 $$
 c_{\Delta}=\sum_{i=0}^{n-1}(t_{i+1}-t_i)E[V(X(t_i))\vee0].
 $$
 We regard $\hat{c}_{\Delta}$ as true value.
 $$
-\hat{c}_{\Delta} = \frac{1}{L_0} \sum_{\ell_0=1}^{L_0} \sum_{i=0}^{n-1} \left(\{ \sum_{T_k>t}F(T_k, X_{\ell_0}^{'}(t_i))\}\vee 0\right)
-(t_{i+1}-t_i).
+\hat{c}_{\Delta} = \sum_{i=0}^{n-1} (t_{i+1}-t_i)E(t_i),\  E(t_i) = \frac{1}{L_0} \sum_{\ell_0=1}^{L_0} \left(\{ \sum_{T_k>t}F_k(X_{\ell_0}^{'}(t_i))\}\vee 0\right).
 $$
-Parameters are following.
+\subsection{Test results}
+We denote estimator $\hat{e}$ by $\hat{e}^{(s1, s2),[L1, L2]}$ when it is 
+calculated with the condition that seed is $s1$ and number of path is $L1$ for ${\bf X}_1$ and seed is $s2$ and number of path is  $L1$ for ${\bf X}_2$. 
+If estimator $\hat{e}$ depends on eather ${\bf X}_1$ or ${\bf X}_2$, we denote as $\hat{e}^{(s)[L]}$.
+Parameters used to the test are following.
 \begin{itemize}
-    \item $x = 100.$
-    \item $\sigma = 0.3.$
-    \item $T=1.0.$
+    \item $x = 100, \ \sigma = 0.3, \ T=1.0.$
     \item $L_0=10000.$ 
     \item $L=1000, 2000, 5000, 10000.$ 
     \item $t_i = 0.1 \times i, \ i = 1, \dots, 100.$
     \item $T_k = 0.2 \times k, \ k = 1, \dots, 5.$ 
 \end{itemize}
-We have $\hat{c}_{\Delta}\approx 620.67633265205791.$ 
-We also take $L_0=10000$ and $L=1000, 2000, 5000, 10000.$ 
-We replicate 10 estimators of $\hat{c}_i, i=1,2$ for each $L$. Let "Average $i$" denote the average and "Standard Dviation $i$" denote
- the unbiased standard deviation of these 100 estimators of $\hat{c}_i, i=1,2.$ We show the numerical result in Table \ref{nume}, 
-we show graph of "Average $i, i = 1,2$" and $c_{\Delta}$ in Figure \ref{fig1} and graph of "Standard Deviation $i, i=1,2$" in Figure \ref{fig2}.
-\noindent 
-We see in Figure \ref{fig1} that both $\hat{c}_1$ and $\hat{c}_2$ are close to $c_{\Delta}$,
-but we see in Figure \ref{fig2} that $\hat{c}_2$ is more stable than $\hat{c}_1.$
 
+Figure \ref{fig1} shows the value of $ \{$analytic:$E^{(0)[L0]}$, explicit: $E_{\text{explicit}}^{(1)[L]}$, and implicit: $E_{\text{implicit}}^{(1, 0)[L, L0]}$ $; L =1000, 2000, 5000, 10000,
+L0 = 10000\}.$
+We see that both 
+$E_{\text{explict}}^{(1)[L]}$ and $E_{\text{implict}}^{(1, 0)[L, L0]}$ is getting 
+closer to $E^{(0)[L0]}$ as $L$ getting large.
+And we see that $E_{\text{implict}}^{(1, 0)}[L, L0]$ is sufficiently close to $E^{(0)[L0]}$ even 
+when $L$ is small.
+
+Figure \ref{fig2} shows the box plot data of  $e(L)= \{\hat{c}_{\text{explicit}}^{(i)[L]}- \hat{c}_{\Delta}^{(0)}; i = 1, \dots, 10\}$ and $i(L)=\{\hat{c}_{\text{implicit}}^{(i, 0)[L, L0]}- \hat{c}_{\Delta}^{(0)}; i = 1, \dots, 10\}$. We see that both $e(L)$ and $i(L)$ are
+converge to $0$. We also see, for each $L$, $i(L)$ is much more stable than $e(L)$ and 
+$i(L)$ is suffiently accurate even when $L$ is small.
+\begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=18cm]{exposureAll.pdf}
+\caption{Approximation of $E(t)$}\label{fig1}
 \end{center}
+\end{figure} 
+
 
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=12cm]{BoxplotCva.pdf}
-\caption{Average} \label{fig1}
+\caption{Approximation error of $c_0$} \label{fig2}
 \end{center}
 \end{figure} 
 
 
 
  \newpage
-\begin{thebibliography}{99}
-\bibitem{AH}Avramidis, A.N. , and P. Hyden, 
-\newblock Efficiency improvements for pricing American options 
-with a stochastic mesh, 
-\newblock in Proceedings of the 1999 Winter Simulation Conference, pp. 344-350
-%%
-\bibitem{BG1} Broadie, M., and P. Glasserman,
-\newblock A stochastic mesh method for pricing high-dimensional American options
-\newblock J. Computational Finance, 7 (4) (2004), 35-72.
-%%
-\bibitem{DU} Duffie, D., M. Huang, 1996,
-\newblock  Swap Rates and Credit Quality, 
-\newblock Journal of Finance, Vol. 51, No. 3, 921
-%%
-\bibitem{FT} Fujii, F., A. Takahashi
-\newblock Derivative Pricing under Asymmetric and Imperfect Collateralization, and CVA
-\newblock CARF Working Paper F-240, December 2010
-%%
-\bibitem{G}  Glasserman, P.,
-\newblock "Monte Carlo Methods in Financial Engineering"
-\newblock Springer,  2004, Berlin. 
-%%
-\bibitem{Gre}Gregory, J.,
-\newblock Counterparty credit risk and credit value adjustment: A continuing challenge for global financial markets, Second Editio,
-\newblock John Wiley ¥& Sons, 2012.
-%%
-\bibitem{K}Kusuoka, S.,
-\newblock Malliavin Calculus Revisited,
-\newblock  J. Math. Sci. Univ. Tokyo 10(2003), 261-277.
-%%
-\bibitem{KS2}Kusuoka, S., and D.W.Stroock, 
-\newblock Applications of Malliavin Calculus II,
-\newblock J. Fac. Sci. Univ. Tokyo Sect. IA Math. 32(1985),1-76.
-%%
-\bibitem{KM}Kusuoka, S. , and Y. Morimoto, 
-\newblock Stochastic mesh methods for H{¥" o}rmander type diffusion processes, 
-\newblock Preprint.
-%%
-\bibitem{H} Laborde're,H.
-\newblock Cutting CVA's Complexity,
-\newblock Risk Magazine, July, 2012, pp. 67-73.
-%%
-\bibitem{LH} Liu, G., and L.J. Hong,
-\newblock Revisit of stochastic mesh method for pricing American options,
-\newblock Operations Research Letters 37(2009), 411-414.
-%%
-\bibitem{Sh}Shigekawa, I.,
-\newblock "Stochastic Analysis",
-\newblock Translation of Mathematical Monographs vol.224,
-AMS 2000.
-%%
-\end{thebibliography}
+\nocite{*}
+\bibliographystyle{plain}
+%bibtexファイル(.bibファイル)の絶対PATHを指定% 
+\bibliography{/Users/morimoto/Documents/Reserch/bib/cva} 
 
 \end{document}
 
