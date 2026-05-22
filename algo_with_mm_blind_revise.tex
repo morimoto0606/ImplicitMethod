@@ -51,70 +51,101 @@ Mathematical Subject Classification (2010): 65C05, 60G40
 Keywords: Algorithmic Trading, Market Impact, Optimal Execution, Liquidation, Stochastic Control, Impulse Control
 
 \section{Introduction}
-When executing large orders, carrying out trades over a short period can trigger unfavorable market movements, known as market impact. 
-On the other hand, spreading the execution over a longer time exposes the trader to market risk. 
-Algorithmic execution strategies must navigate this trade-off, 
-and such strategies are generally categorized into static strategies, 
-which follow a predetermined execution schedule, and dynamic strategies, 
-which adjust the schedule in response to market conditions.
 
-The seminal work of Almgren and Chriss \cite{almgren2001optimal} and Bertsimas and Lo \cite{bertsimas1998optimal} introduced a foundational model in this field, 
-representing the market mid-price as a continuous diffusion process with market impact 
-incorporated as a drift term. This model provides a framework for deriving static optimal execution strategies using variational methods.
-Regarding static strategies, many studies have also extended the modeling of market impact structures, 
-including nonlinear market impact and resilience and transient impact in Dang\cite{dang2017optimal}, Gatheral et al. \cite{gatheral2011exponential}, Gatheral and Schied \cite{gatheral2012transient}, and Curato et al.\cite{curato2017optimal}.
+When executing large orders, rapid execution over a short period may trigger unfavorable price movements through market impact. 
+Conversely, executing orders too slowly exposes the trader to market risk arising from price fluctuations. 
+Optimal execution problems therefore involve a trade-off between market impact costs and inventory risk, and constructing efficient execution strategies has become an important topic in quantitative finance.
 
-In real markets, it is critical to account for bid-offer spreads and to optimally balance the use of market orders(MOs) and limit orders(LOs). 
-Cartea et al.\cite{cartea2015algorithmic}, Cartea and Jaimungal \cite{cartea2015optimal} extended this framework by modeling LOs using a jump-diffusion process incorporating Poisson arrivals, while representing MOs as interventions within an impulse control framework. 
-They solved the associated Hamilton-Jacobi-Bellman Quasi-Variational Inequality (HJB QVI) to derive dynamic strategies.
+The seminal works of Almgren and Chriss \cite{almgren2001optimal} and Bertsimas and Lo \cite{bertsimas1998optimal} introduced foundational frameworks for optimal execution under market impact. 
+These studies modeled the asset price as a diffusion process and derived optimal execution strategies using stochastic control and variational methods. 
+Since then, many extensions have been proposed, including models with nonlinear market impact, transient impact, and resilience effects 
+\cite{dang2017optimal,gatheral2011exponential,gatheral2012transient,curato2017optimal}.
 
-In financial institutions, market making(MM) plays an important role in providing liquidity to the market by simultaneously quoting buy and sell orders and acting as a counterparty to other participants. 
-Algorithmic execution can leverage internal liquidity through market making, attracting order flow by offering more favorable prices. 
-This approach, particularly in OTC markets such as the FX market, reduces market impact and enables efficient execution compared to trading directly in external markets.
-Moreover, this mechanism benefits both the institution’s algorithmic execution clients and the clients receiving quotes on the market-making side. 
-As such, it has become a widely adopted practice in the industry.
+In practical markets, execution is carried out not only through market orders (MOs) but also through limit orders (LOs). 
+Consequently, optimal execution models must incorporate bid-offer spreads and the trade-off between aggressive and passive execution methods. 
+Cartea et al.~\cite{cartea2015algorithmic} and Cartea and Jaimungal \cite{cartea2015optimal} developed dynamic optimal execution models combining MOs and LOs. 
+In their framework, limit-order executions are modeled through Poisson arrivals, while market orders are represented within an impulse-control framework. 
+The resulting optimization problem is characterized through a Hamilton--Jacobi--Bellman quasi-variational inequality (HJB-QVI).
 
-There has been extensive research on market making in Avellaneda and Stoikov\cite{avellaneda2008high}, Gu\'eant et al.\cite{gueant2013dealing} and Cartea et al.\cite{cartea2017algorithmic}.
-All of which focuses on determining optimal strategies for market makers. 
-This paper, however, examines optimal strategies from the perspective of an algorithmic execution agent, 
-rather than considering the profitability of market makers. 
-Since this method essentially transfers the flow to algorithmic execution clients, 
-it does not generate profit and loss (PL) for market makers. 
+While most classical optimal execution models focus primarily on external liquidity, dealer markets and OTC markets increasingly rely on internal liquidity generated through client flow and market-making activity. 
+Large financial institutions commonly operate both algorithmic execution services and market-making businesses simultaneously. 
+Through market-making operations, internal liquidity is continuously generated from client order flow. 
+Such internal liquidity can potentially be utilized within algorithmic execution, thereby reducing the need to execute directly in external markets and mitigating market impact costs.
 
-This paper proposes a novel model that incorporates not only interbank MOs and LOs but also internal liquidity generated through MM as potential execution options. 
-The motivation for this approach lies in the ability to quantify the optimal extent of favorable pricing in market making and the ideal integration of interbank and internal liquidity during execution.
-Our model builds upon the Cartea et al.\cite{cartea2015algorithmic} framework by extending it to account for market impact in interbank LOs and MOs, while excluding market impact for internal orders executed through MMs. 
-This distinction allows us to analyze the interaction between interbank and internal liquidity. 
-We derive the corresponding HJB QVI, solve it numerically, and analyze the resulting strategies to shed light on their characteristics.
+The importance of internalization and internal liquidity utilization has increased significantly in modern dealer markets. 
+In particular, internal execution mechanisms allow institutions to match flows internally rather than routing all transactions to external markets. 
+Such mechanisms are expected to improve execution efficiency while reducing market impact and transaction costs. 
+These practices are especially important in OTC markets such as foreign exchange markets, although similar structures are also observed in various dealer-driven markets.
 
-\section{Utilization of liquidity in the market making}
-This chapter provides a detailed explanation of algorithmic execution utilizing market making. 
-Financial institutions operate both as market makers and takers. 
-Specifically, as market makers, they primarily supply liquidity to client markets, and the resulting positions are hedged in the interbank market as market takers. 
-Additionally, algorithmic execution services provided by financial institutions typically involve acting as a taker to execute large client orders on their behalf.
+There exists extensive research on market making itself, including Avellaneda and Stoikov \cite{avellaneda2008high}, Gu\'eant et al.~\cite{gueant2013dealing}, and Cartea et al.~\cite{cartea2017algorithmic}. 
+These studies primarily focus on the optimization of quoting strategies and inventory management for market makers. 
+In contrast, most optimal execution studies focus mainly on external liquidity and do not explicitly incorporate internal liquidity generated through market-making activity into the execution framework. 
+To the best of our knowledge, there has been limited research integrating market orders, limit orders, and internal market-making executions within a unified optimal execution framework.
 
-Such algorithmic execution is generally carried out through limit orders (LO) or market orders (MO) in the interbank market. 
-If the institution is also engaged in market making, it can attract necessary flow by offering competitive prices to its market-making clients. 
-This flow can then be handed over to the algorithmic execution side, 
-creating mutually beneficial transactions for both the clients using algorithmic execution services and the clients engaging with the institution's market-making services. 
-This integrated approach enhances efficiency and value for all parties involved.
+The present work proposes an optimal execution model that incorporates not only interbank market orders and limit orders, but also internal liquidity generated through market making as an additional execution source. 
+In particular, the proposed model simultaneously incorporates
+(i) market orders,
+(ii) limit orders,
+and
+(iii) internal executions through market making,
+while distinguishing between external executions with market impact and internal executions without direct market impact.
 
-Figure \ref{fig:mm} shows an illustration of algorithmic execution utilizing market making.
+The primary objective of the proposed framework is to analyze the optimal allocation between external liquidity and internal liquidity. 
+In addition, the model allows us to determine how aggressively internal quotes should be provided from the perspective of execution quality. 
+This viewpoint differs from the traditional market-making literature, which mainly focuses on the profitability of the market maker itself. 
+Instead, the present work focuses on improving execution quality for algorithmic execution clients through the utilization of internal liquidity.
+
+The main contributions of this paper are summarized as follows.
+First, we formulate a unified stochastic control and impulse-control framework incorporating market orders, limit orders, and internal market-making executions. 
+Second, we derive the corresponding HJB-QVI and characterize the value function within the viscosity-solution framework. 
+Third, we perform numerical experiments and sensitivity analyses to investigate how internal liquidity affects optimal execution strategies and execution values. 
+The numerical results demonstrate that the availability of internal liquidity significantly improves execution performance and reduces effective market impact costs.
+
+The remainder of this paper is organized as follows.
+Section~2 explains the practical mechanism underlying algorithmic execution utilizing market-making liquidity. 
+Section~3 introduces the mathematical model and derives the associated HJB-QVI. 
+Section~4 presents numerical experiments and sensitivity analyses of the optimal strategies. 
+Finally, Section~5 concludes the paper.
+
+\section{Practical Background and Internal Liquidity Mechanism}
+
+This section explains the practical mechanism motivating the proposed model. 
+In dealer markets and OTC markets, financial institutions often operate both algorithmic execution services and market-making businesses simultaneously. 
+The proposed framework is motivated by the possibility of utilizing internal liquidity generated through market-making activity within algorithmic execution.
+
+Financial institutions operate both as market makers and market takers. 
+As market makers, they provide liquidity to clients by continuously quoting bid and ask prices. 
+The resulting inventory positions are typically hedged in external interbank markets, where the institution acts as a market taker. 
+At the same time, many financial institutions also provide algorithmic execution services, in which large client orders are executed through external markets using market orders or limit orders.
+
+In standard algorithmic execution, client orders are generally executed directly in external markets through combinations of market orders and limit orders. 
+However, when a financial institution simultaneously operates a market-making business, internal client flow generated through market making may provide an additional execution opportunity. 
+By slightly improving quoted prices for market-making clients, the institution may attract offsetting client flow internally. 
+Such internally matched flow can then be utilized by the algorithmic execution desk, thereby reducing the amount of execution required in external markets.
+
+This mechanism can provide benefits for both sides of the transaction. 
+Clients using algorithmic execution services may achieve execution at prices more favorable than direct execution in external markets while reducing market impact costs. 
+At the same time, clients interacting with the market-making desk may also receive competitive quoted prices. 
+As a result, internalization mechanisms have become widely utilized in practice, particularly in OTC markets such as foreign exchange markets.
+
+Figure~\ref{fig:mm} illustrates a typical example of algorithmic execution utilizing internal market-making liquidity in an OTC FX market. 
+The execution agent receives a sell order from a client and coordinates with the internal market-making desk to attract offsetting client flow through favorable pricing. 
+As a result, internal execution can be achieved at prices more favorable than direct execution in the interbank market, while simultaneously reducing market impact costs.
+
+The figure highlights the following points:
 \begin{itemize}
-  \item FX market image (OTC), USD/JPY.
-  \item Client order: Sell algorithmic execution.
-  \item Agent of algorithmic execution requests internal market maker to provide favorable price to the client of market making side.
-  \item For clients on the maker side, they can purchase at a special discounted price, which is lower than the usual ask price.
-  \item For clients utilizing algorithmic execution, they can sell at a price higher than the interbank bid price while also minimizing market impact.
+  \item The example considers an OTC FX market such as USD/JPY.
+  \item The algorithmic execution client submits a sell order.
+  \item The execution desk requests the internal market-making desk to provide favorable quotes in order to attract offsetting client flow.
+  \item Clients interacting with the market-making desk can purchase at prices lower than the usual ask price.
+  \item The execution desk can reduce market impact by utilizing internally generated liquidity instead of relying entirely on external interbank execution.
 \end{itemize}
-\begin{center}
-\end{center}
 
-\begin{figure}[]
+\begin{figure}[H]
   \centering
   \includegraphics[width=1.0\textwidth]{internal_match.pdf}
-  \caption{Image of algorithm execution utilizing MM}
-  \label{fig:mm}  
+  \caption{Illustration of algorithmic execution utilizing internal market-making liquidity}
+  \label{fig:mm}
 \end{figure}
 
 \section{Model}\label{sec:model}
