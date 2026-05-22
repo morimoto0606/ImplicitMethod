@@ -1,0 +1,39 @@
+Introduction ドラフト（日本語）
+大口注文を執行する際、短期間で大量の取引を行うとマーケットインパクトによって不利な価格変動を引き起こす可能性がある。一方で、執行期間を長くすると市場リスクにさらされる。そのため、アルゴリズミック執行では、マーケットインパクトと価格変動リスクのトレードオフを考慮した最適執行戦略が重要となる。
+最適執行に関する代表的研究として、Almgren and Chriss \cite{almgren2001optimal} および Bertsimas and Lo \cite{bertsimas1998optimal} は、マーケットインパクトを考慮した執行モデルを提案した。これらの研究では、価格過程を拡散過程としてモデル化し、変分法や確率制御を用いて最適執行戦略を導出している。その後も、非線形マーケットインパクト、transient impact、resilience などを考慮した多くの拡張研究が行われている \cite{dang2017optimal,gatheral2011exponential,gatheral2012transient,curato2017optimal}。
+また、実市場ではマーケットオーダー（MO）だけでなくリミットオーダー（LO）の利用も重要であり、スプレッドを考慮した執行戦略が必要となる。Cartea et al. \cite{cartea2015algorithmic} および Cartea and Jaimungal \cite{cartea2015optimal} は、LO をポアソン到着を伴うジャンプ過程としてモデル化し、MO を impulse control framework によって表現することで、MO と LO を組み合わせた動的最適執行戦略を導出した。
+一方、近年の dealer market や OTC market では、internalization や internal liquidity の重要性が高まっている。大手機関投資銀行やディーラーは、アルゴリズミック執行サービスとマーケットメイキング業務を同時に運営していることが一般的である。マーケットメイキング業務では、顧客フローを通じて継続的に internal liquidity が生成される。この internal liquidity は、アルゴリズミック執行における execution flow に対して利用可能であり、external market における market impact を抑制する手段となり得る。
+
+近年では、internal exchange や passive internal liquidity といった仕組みも注目されており、internal liquidity を活用した execution の重要性が高まっている。特に、external market に直接注文を流す代わりに、内部フローを利用して execution を行うことで、市場インパクトの低減や execution efficiency の向上が期待される。このような internalization は、FX市場に限らず、多くの dealer market において重要な役割を果たしている。
+マーケットメイキングに関しては、Avellaneda and Stoikov \cite{avellaneda2008high}、Guéant et al. \cite{gueant2013dealing}、Cartea et al. \cite{cartea2017algorithmic} など、多くの研究が存在する。これらの研究は主に、マーケットメイカーの inventory management や quoting strategy の最適化を対象としている。一方、既存の optimal execution 研究の多くは external liquidity のみを対象としており、マーケットメイキングによって生成される internal liquidity を execution framework に統合的に組み込んだ研究は限定的である。
+本研究では、インターバンク市場における MO および LO に加えて、マーケットメイキングによって生成される internal liquidity を execution source として組み込んだ最適執行モデルを提案する。本研究の特徴は、単に既存 execution framework を拡張することではなく、execution と market making の相互作用を統合的に扱い、external liquidity と internal liquidity の最適配分を定量的に分析する点にある。
+特に、本モデルでは、market making 側でどの程度 favorable pricing を提示すべきかを execution の観点から内生的に決定できる。この点は、market making の収益性そのものを目的とする従来研究とは異なり、algorithmic execution client の execution quality を中心に分析している点に特徴がある。
+本論文では、対応する HJB-QVI を導出し、数値解析を通じて internal liquidity の利用が execution strategy に与える影響を分析する。また、internalization が execution cost や market impact の低減に与える効果についても定量的に検討する。
+本論文の構成は以下の通りである。Section 2 では、マーケットメイキングを利用したアルゴリズミック執行の概要を説明する。Section 3 ではモデル設定および HJB-QVI の導出を行う。Section 4 では数値実験を通じて最適戦略の特徴を分析する。最後に Section 5 で結論を述べる。
+
+現在のイントロ（和訳）
+
+大口注文を執行する際、短期間で取引を行うと市場に不利な価格変動、すなわちマーケットインパクトを引き起こす可能性がある。
+一方で、執行を長期間に分散すると市場リスクにさらされる。
+アルゴリズミック執行戦略はこのトレードオフを扱う必要があり、一般に、事前に決めたスケジュールに従う静的戦略と、市場状況に応じてスケジュールを調整する動的戦略に分類される。
+Almgren and Chriss および Bertsimas and Lo の先駆的研究は、この分野の基礎モデルを導入した。
+そこでは市場のミッド価格を連続拡散過程として表現し、マーケットインパクトをドリフト項として組み込んでいる。
+このモデルは変分法による静的最適執行戦略を導出する枠組みを提供する。
+さらに静的戦略に関しては、非線形マーケットインパクトや resilience、transient impact など、多くの研究がモデルを拡張している。
+現実市場では、ビッド・オファースプレッドを考慮し、マーケットオーダー(MO)とリミットオーダー(LO)の利用を最適にバランスさせることが重要である。
+Cartea らは、LO をポアソン到着を伴うジャンプ拡散過程としてモデル化し、MO を impulse control framework の介入として表現することで、この枠組みを拡張した。
+彼らは対応する HJB-QVI を解くことで動的戦略を導出した。
+金融機関において、マーケットメイキング(MM)は、買い・売り注文を同時に提示し、他の市場参加者のカウンターパーティとして機能することで、市場に流動性を供給する重要な役割を果たしている。
+アルゴリズミック執行は、マーケットメイキングを通じて内部流動性を活用することができ、より有利な価格を提示することでフローを引き付けることができる。
+このアプローチは、特に FX 市場のような OTC 市場において、外部市場で直接取引する場合と比べて、マーケットインパクトを低減し、効率的な執行を可能にする。
+さらに、この仕組みは、アルゴ執行顧客と、マーケットメイク側で価格提示を受ける顧客の双方に利益をもたらす。
+そのため、この手法は業界で広く用いられている。
+Avellaneda-Stoikov、Guéant、Cartea らによってマーケットメイキングに関する広範な研究が行われている。
+これらはいずれもマーケットメイカーの最適戦略決定に焦点を当てている。
+一方、本論文では、マーケットメイカーの収益性ではなく、アルゴリズミック執行エージェントの視点から最適戦略を考察する。
+この手法は本質的にフローをアルゴ執行顧客へ移転するものであり、マーケットメイカー側には損益(PL)を発生させない。
+本論文では、インターバンク市場での MO・LO に加え、MM によって生成される内部流動性も執行手段として組み込んだ新しいモデルを提案する。
+このアプローチの動機は、マーケットメイキングにおいてどの程度有利な価格提示を行うべきか、また execution において interbank liquidity と internal liquidity をどのように統合するのが理想的かを定量化できる点にある。
+本モデルは Cartea らの枠組みを拡張し、インターバンク LO/MO にはマーケットインパクトを考慮する一方で、MM を通じた内部注文にはマーケットインパクトを考慮しない。
+この違いにより、interbank liquidity と internal liquidity の相互作用を分析できる。
+さらに、対応する HJB-QVI を導出し、数値的に解くことで戦略の特徴を分析する。

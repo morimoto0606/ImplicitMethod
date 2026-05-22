@@ -1,0 +1,67 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\topmargin=-45pt  
+\headheight=12truept 
+\headsep=25pt
+\footskip=37pt 
+\hoffset=0pt 
+\voffset=12pt
+\oddsidemargin=0cm 
+\evensidemargin=0cm
+\textheight=23.7cm 
+\textwidth=16.0cm
+
+\def \nequiv {\equiv \hspace{-3mm} / \hspace{1mm}}
+\def \qed {\hfill \hbox {\rule [-2pt]{3pt}{6pt}}}
+%\pagestyle{myheadings}
+%%%%%%%%%%%%%
+\newtheorem{thm}{Theorem}%[chapter]% THEOREM
+\newtheorem{theorem}[thm]{Theorem}
+\newtheorem{prop}[thm]{Proposition}% PROPOSITION
+\newtheorem{proposition}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}% COROLLARY
+\newtheorem{corollary}[thm]{Corollary}
+\newtheorem{lem}[thm]{Lemma}% LEMMA
+\newtheorem{lemma}[thm]{Lemma}
+\newtheorem{remark}[thm]{Remark}
+\newtheorem{defi}[thm]{Definition}
+\newtheorem{definition}[thm]{Definition}
+%\newtheorem{example}[thm]{Example}
+
+\begin{document}
+\title{Optimal Execution Strategies Incorporating Internal Liquidity Through Market Making}
+
+\author{
+Yusuke MORIMOTO
+\thanks{
+MUFG Bank, Ltd, 1-4-5 Marunouchi, Chiyoda-ku, Tokyo 100-8388, Japan, \
+E-mail: yuusuke.morimoto@gmail.com} }
+\date{}
+\maketitle
+\begin{abstract}
+This paper proposes a novel algorithmic execution model that integrates interbank limit and market orders with internal liquidity provided through market making. 
+Building upon a widely used framework for optimal execution, the model incorporates market impact for interbank orders while excluding it for internal market-making executions. The objective is to optimize the allocation between interbank and internal liquidity, thereby reducing market impact and enhancing execution efficiency.
+\end{abstract}
+
+JEL Classification: C41, G11
+Mathematical Subject Classification (2010): 65C05, 60G40
+Keywords: Algorithmic Trading, Market Impact, Optimal Execution, Liquidation, Stochastic Control, Impulse Control
+
+\section*{Declarations}
+
+\textbf{Author Contributions:} The author conducted all theoretical modeling, data analysis, and manuscript preparation.
+
+\textbf{Acknowledgments:}  The author would like to thank Dr. Keiichi Maeta of MUFG Bank for insightful discussions, and Mr. Katsumi Takada of Diva Analytics for his valuable comments.
+
+
+\textbf{Funding:} The author received no financial support for this research.
+
+\textbf{Conflicts of Interest:} The author declares no conflicts of interest.
+
+
+\end{document}
+
+
