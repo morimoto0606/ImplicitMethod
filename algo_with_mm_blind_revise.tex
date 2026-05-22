@@ -1250,23 +1250,52 @@ LO/MO/MM & $ 0.112355$ & $0.153495$ \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:sensitivity} reports sensitivity analyses of the reduced value function with respect to the internal execution intensity $\lambda^I$, the inventory penalty parameter $\phi$, and the market-order impact parameter $\alpha^M$.
+Table~\ref{tab:sensitivity} and Figure~\ref{fig:sensitivity}
+report sensitivity analyses of the reduced value function
+with respect to the internal execution intensity $\lambda^I$,
+the inventory penalty parameter $\phi$,
+and the market-order impact parameter $\alpha^M$.
 
-First, the reduced value of the LO/MO/MM model increases monotonically as the internal execution intensity $\lambda^I$ increases.
+First, the reduced value of the LO/MO/MM model increases
+monotonically as the internal execution intensity $\lambda^I$
+increases, as shown in Figure~\ref{fig:sensitivity}(a).
+This behavior is economically intuitive because a larger
+$\lambda^I$ implies more frequent internal execution opportunities
+through market making, allowing the agent to complete liquidation
+with smaller market impact costs and reduced reliance on aggressive
+market orders.
+Consequently, the performance improvement over the benchmark
+LO/MO model also increases monotonically.
 
-This behavior is economically intuitive because a larger $\lambda^I$ implies more frequent internal execution opportunities through market making, allowing the agent to complete liquidation with smaller market impact costs and reduced reliance on aggressive market orders.
-Consequently, the performance improvement over the benchmark LO/MO model also increases monotonically.
+Second, as the inventory penalty parameter $\phi$ increases,
+the reduced values of both the LO/MO and LO/MO/MM models decrease,
+as shown in Figure~\ref{fig:sensitivity}(b).
+This is consistent with the interpretation of $\phi$
+as a penalty for deviations from the benchmark liquidation trajectory.
+A larger inventory penalty reduces the incentive to wait for favorable
+executions through passive orders or internal liquidity,
+leading to more immediate liquidation behavior.
+As a result, the additional benefit obtained from internal
+market-making liquidity becomes smaller as $\phi$ increases.
 
-Second, as the inventory penalty parameter $\phi$ increases, the reduced values of both the LO/MO and LO/MO/MM models decrease.
-This is consistent with the interpretation of $\phi$ as a penalty for deviations from the benchmark liquidation trajectory.
-A larger $\phi$ forces the agent to liquidate inventory more aggressively in order to reduce inventory risk, thereby reducing the flexibility to wait for favorable executions through limit orders or internal liquidity.
-As a result, the additional benefit obtained from internal market-making liquidity becomes smaller as $\phi$ increases.
+Finally, Figure~\ref{fig:sensitivity}(c) shows that the reduced value
+exhibits only limited sensitivity with respect to the market-order
+impact parameter $\alpha^M$ within the considered parameter range.
+Although the reduced value decreases approximately linearly as
+$\alpha^M$ increases, the magnitude of the variation remains relatively
+small compared with the sensitivities to $\lambda^I$ and $\phi$.
+This suggests that, under the optimal strategy,
+market orders play a secondary role relative to limit-order and
+internal executions, and are mainly used as a supplementary execution
+mechanism near the terminal period.
 
-Finally, the reduced value exhibits only limited sensitivity with respect to the market-order impact parameter $\alpha^M$ within the considered parameter range.
-This suggests that, under the optimal strategy, liquidation is achieved primarily through limit orders and internal executions, while market orders are used only as a supplementary execution mechanism near the terminal period.
-Therefore, moderate changes in market-order impact have only a minor influence on the overall execution value.
-
-Overall, the numerical results are consistent with the economic intuition underlying the proposed model and support the effectiveness of incorporating internal market-making liquidity into optimal execution strategies.
+Overall, the numerical results are consistent with the economic
+intuition underlying the proposed model and support the effectiveness
+of incorporating internal market-making liquidity into optimal
+execution strategies.
+In particular, the results indicate that the performance improvement
+is primarily driven by the availability of internal liquidity itself,
+rather than by the market-order mechanism.
 
 \begin{table}[H]
 \centering
@@ -1305,6 +1334,20 @@ $\alpha^M$
 \hline
 \end{tabular}
 \end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{sensitivity_all.pdf}
+\caption{
+Sensitivity of the improvement over the LO/MO benchmark
+with respect to
+(a) internal execution intensity $\lambda^I$,
+(b) inventory penalty parameter $\phi$,
+and
+(c) market-order impact parameter $\alpha^M$.
+}
+\label{fig:sensitivity}
+\end{figure}
 
 \bibliographystyle{plain}
 \bibliography{references}  % references.bib を指定
